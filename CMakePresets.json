@@ -1,0 +1,93 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "description": "Default build using Ninja generator",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "$env{BUILD_DIR}",
+            "environment": {
+                "BUILD_DIR": "build/${presetName}"
+            },
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD":"17",
+                "CMAKE_CXX_STANDARD_REQUIRED":"ON",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "x86-windows",
+            "displayName": "for windows",
+            "description": "windows build",
+            "inherits": "default",
+            "architecture": {
+                "value": "x86",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER":"cl",
+                "CMAKE_MSVC_RUNTIME_LIBRARY":"MultiThreaded$<$<CONFIG:Debug>:Debug>",
+                "VCPKG_TARGET_TRIPLET":"x86-windows-static",
+                "VCPKG_TARGET_ARCHITECTURE":"x86",
+                "VCPKG_CRT_LINKAGE":"static",
+                "VCPKG_LIBRARY_LINKAGE":"static",
+                "DEFOLD_TRIPLET":"win32",
+                "USEMINIAUDIO":"ON"
+            }
+        },
+        {
+            "name": "x64-windows",
+            "displayName": "for windows x64",
+            "description": "windows x64 build",
+            "inherits": "default",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER":"cl",
+                "CMAKE_MSVC_RUNTIME_LIBRARY":"MultiThreaded$<$<CONFIG:Debug>:Debug>",
+                "VCPKG_TARGET_TRIPLET":"x64-windows-static",
+                "VCPKG_TARGET_ARCHITECTURE":"x64",
+                "VCPKG_CRT_LINKAGE":"static",
+                "VCPKG_LIBRARY_LINKAGE":"static",
+                "DEFOLD_TRIPLET":"x86_64-win32",
+                "USEMINIAUDIO":"ON"
+            }
+        },
+        {
+            "name": "x64-linux",
+            "displayName": "for linux x64",
+            "description": "linux x64 build",
+            "inherits": "default",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET":"x64-linux",
+                "VCPKG_TARGET_ARCHITECTURE":"x64",
+                "VCPKG_CRT_LINKAGE":"dynamic",
+                "VCPKG_LIBRARY_LINKAGE":"static",
+                "DEFOLD_TRIPLET":"x86_64-linux",
+                "USEMINIAUDIO":"ON"
+            }
+        }
+    ],
+
+    "buildPresets": [
+        {
+          "name": "x86-windows",
+          "configurePreset": "x86-windows"
+        },
+        {
+            "name": "x64-windows",
+            "configurePreset": "x64-windows"
+        },
+        {
+            "name": "x64-linux",
+            "configurePreset": "x64-linux"
+        }
+    ]
+}

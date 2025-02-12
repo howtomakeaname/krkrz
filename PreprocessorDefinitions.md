@@ -58,3 +58,7 @@ Window.enableTouchをfalseとします。
     DISABLE_EMBEDDED_GAME_PAD
     TVP_REPORT_HW_EXCEPTION
     TVP_ENABLE_EXECUTE_AT_EXCEPTION
+
+    TVP_NO_NORMALIZE_PATH               パス取得時にノーマライズしない
+    TVP_AUTOPATH_IGNORECASE             自動パス検索時に case を無視する
+    TVP_LOCALFILE_FORCE_CASESENSITIVE   ローカルパス検索時に caseを強制参照（WIN用）
