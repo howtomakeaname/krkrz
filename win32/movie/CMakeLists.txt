@@ -57,12 +57,6 @@ target_compile_definitions( baseclasses PRIVATE
 )
 
 # ----------------------------------------------------
-# webp movieplayer (for layer)
-# ----------------------------------------------------
-
-add_subdirectory( ../../external/movie-player movie-player)
-
-# ----------------------------------------------------
 # krmovie plugin
 # ----------------------------------------------------
 
@@ -95,7 +89,6 @@ add_library( krmovie SHARED
     IRendererBufferVideo_i.c
     resource.h
     krmovie.rc
-    webplayer.cpp
 )
 
 target_include_directories( krmovie PRIVATE 
@@ -114,5 +107,4 @@ target_compile_definitions( krmovie PRIVATE
 
 target_link_libraries( krmovie PUBLIC
 	baseclasses
-    movieplayer
 )

@@ -14,9 +14,6 @@
     "picojson",
     "libjpeg-turbo",
     "zlib",
-    "libvpx",
-    "libwebm",
-    "miniaudio",
     {
       "name": "freetype",
       "features": [
