@@ -2,8 +2,6 @@
   "name": "krkrz",
   "version": "2.0.0",
   "dependencies": [
-    "egl-registry",
-    "opengl-registry",
     "glm",
     "libogg",
     "libpng",
@@ -14,6 +12,8 @@
     "picojson",
     "libjpeg-turbo",
     "zlib",
+    "plog",
+    "fmt",
     {
       "name": "freetype",
       "features": [
@@ -21,8 +21,10 @@
         "png",
         "bzip2"
       ]
-    }
+    },
+    "miniaudio"
   ],
+  "builtin-baseline": "f26ec398c25c4980f33a50391f00a75f7ad62ef7",
   "vcpkg-configuration": {
     "registries": [
       {

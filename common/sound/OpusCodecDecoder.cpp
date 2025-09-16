@@ -8,7 +8,7 @@
 #include "WaveIntf.h"
 
 extern "C" {
-#include <opus/opusfile.h>
+#include <opusfile.h>
 }
 
 #include <cmath>

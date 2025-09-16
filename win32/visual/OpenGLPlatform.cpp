@@ -25,7 +25,7 @@ static tTVPAtExit TVPUninitANGLEAtExit
 static bool TVPInitializeOpenGLPlatform() {
 	if ( !TVPhModuleLibEGL ) {
 
-		HMODULE hModule = ::LoadLibrary( TJS_W("libEGL.dll") );
+		HMODULE hModule = ::LoadLibrary( L"libEGL.dll" );
 		if( !hModule ) {
 			LPVOID lpMsgBuf;
 			::FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,

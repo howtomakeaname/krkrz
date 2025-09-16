@@ -69,7 +69,7 @@ void __stdcall tTVPDSVideoOverlay::BuildGraph( HWND callbackwin, IStream *stream
 			CComPtr<IBaseFilter>	pVRender;	// for video renderer filter
 			if( FAILED(hr = pVRender.CoCreateInstance(CLSID_VideoRenderer, NULL, CLSCTX_INPROC_SERVER)) )
 				ThrowDShowException(TJS_W("Failed to create video renderer filter object."), hr);
-			if( FAILED(hr = GraphBuilder()->AddFilter(pVRender, TJS_W("Video Renderer"))) )
+			if( FAILED(hr = GraphBuilder()->AddFilter(pVRender, L"Video Renderer")) )
 				ThrowDShowException(TJS_W("Failed to call IFilterGraph::AddFilter."), hr);
 
 			BuildWMVGraph( pVRender, stream );
@@ -134,7 +134,7 @@ void __stdcall tTVPDSVideoOverlay::BuildGraph( HWND callbackwin, IStream *stream
 					CComPtr<IBaseFilter>	pVRender;	// for video renderer filter
 					if( FAILED(hr = pVRender.CoCreateInstance(CLSID_VideoRenderer, NULL, CLSCTX_INPROC_SERVER)) )
 						ThrowDShowException(TJS_W("Failed to create video renderer filter object."), hr);
-					if( FAILED(hr = GraphBuilder()->AddFilter(pVRender, TJS_W("Video Renderer"))) )
+					if( FAILED(hr = GraphBuilder()->AddFilter(pVRender, L"Video Renderer")) )
 						ThrowDShowException(TJS_W("Failed to call IFilterGraph::AddFilter."), hr);
 
 					BuildMPEGGraph( pVRender, m_Reader); // may throw an exception

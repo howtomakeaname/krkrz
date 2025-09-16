@@ -8,18 +8,17 @@
 #include <memory>
 
 
-bool GLFrameBufferObject::create( GLuint w, GLuint h, GLint format ) {
+bool GLFrameBufferObject::create( GLuint w, GLuint h) {
 	destory();
 
-	// internal format
-	int pixel_size = format == GL_ALPHA ? 1 : 4;
-	GLuint fmt;
-	if (format == GL_RGBA) {
-		fmt = GL_RGBA8;
-	} else if (format == GL_BGRA_EXT) {
+    int pixel_size = 4;
+    GLuint fmt;
+	if (GLTexture::SupportBGRAFormat()) {
+		glformat_ = GL_BGRA_EXT;
 		fmt = GL_BGRA8_EXT;
 	} else {
-		fmt = GL_RED;
+		glformat_ = GL_RGBA;
+		fmt = GL_RGBA8;
 	}
 
 	GLint fb;
@@ -40,7 +39,8 @@ bool GLFrameBufferObject::create( GLuint w, GLuint h, GLint format ) {
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexImage2D( GL_TEXTURE_2D, 0, fmt, w, h, 0, format, GL_UNSIGNED_BYTE, nullptr );
+	glTexImage2D( GL_TEXTURE_2D, 0, fmt, w, h, 0, glformat_, GL_UNSIGNED_BYTE, nullptr );
+
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0 );
 
 	GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -73,6 +73,8 @@ bool GLFrameBufferObject::create( GLuint w, GLuint h, GLint format ) {
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_);
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    glBindTexture( GL_TEXTURE_2D, 0 );
 
 	return result;
 }

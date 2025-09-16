@@ -14,6 +14,7 @@
 #define WindowImplH
 
 #include "WindowIntf.h"
+#include <functional>
 
 //---------------------------------------------------------------------------
 // tTJSNI_Window : Window Native Instance
@@ -21,6 +22,8 @@
 class TTVPWindowForm;
 class iTVPDrawDevice;
 class tTJSNI_BaseLayer;
+class tTJSNI_VideoOverlay;
+
 class tTJSNI_Window : public tTJSNI_BaseWindow
 {
 	TTVPWindowForm *Form;
@@ -30,6 +33,9 @@ class tTJSNI_Window : public tTJSNI_BaseWindow
 	tjs_int LayerHeight; //< DrawDeviceのプライマリレイヤサイズ
 	bool UpdateDestRect; //< DestRect 更新フラグ
 	bool SetWindowHandleToDrawDevice; //< Handle変更フラグ
+
+	// 稼働中 VideoOverlay
+	std::vector<tTJSNI_VideoOverlay *> VideoOverlays;
 
 public:
 	tTJSNI_Window();
@@ -51,12 +57,20 @@ public:
 
 private:
 	bool GetWindowActive();
-	virtual void UpdateWaitVSync();
+	void UpdateWaitVSync();
 
 public:
 //-- draw device
 	virtual void ResetDrawDevice();
 	virtual void UpdateContent();
+
+//-- videooverlay
+	void UpdateVideo(tjs_int w, tjs_int h, std::function<void(char *dest, int pitch)> updator);
+	void ClearVideo();
+	void AddVideoOverlay( tTJSNI_VideoOverlay *overlay );
+	void DelVideoOverlay( tTJSNI_VideoOverlay *overlay );
+	void CheckVideoOverlay();
+	void UpdateVideoOverlay();
 
 //-- interface to layer manager
 	void TJS_INTF_METHOD NotifySrcResize(); // is called from primary layer
@@ -178,6 +192,9 @@ public:
 
 	void SetEnableTouch( bool b );
 	bool GetEnableTouch() const;
+
+	void SetEnableTouchMouse( bool b );
+	bool GetEnableTouchMouse() const;
 
 	int GetDisplayOrientation();
 	int GetDisplayRotate();

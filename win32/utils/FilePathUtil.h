@@ -23,64 +23,64 @@ inline tjs_string ExcludeTrailingBackslash( const tjs_string& path ) {
 }
 // 末尾の /\ は含まない
 inline tjs_string ExtractFileDir( const tjs_string& path ) {
-	tjs_char drive[_MAX_DRIVE];
-	tjs_char dir[_MAX_DIR];
-	_wsplitpath_s(path.c_str(), drive, _MAX_DRIVE, dir,_MAX_DIR, NULL, 0, NULL, 0 );
-	tjs_string dirstr = tjs_string( dir );
+	wchar_t drive[_MAX_DRIVE];
+	wchar_t dir[_MAX_DIR];
+	_wsplitpath_s((const wchar_t*)path.c_str(), drive, _MAX_DRIVE, dir,_MAX_DIR, NULL, 0, NULL, 0 );
+	tjs_string dirstr = tjs_string( (tjs_char*)dir );
 	if( dirstr[dirstr.length()-1] != TJS_W('\\') ) {
-		return tjs_string( drive ) + dirstr;
+		return tjs_string( (tjs_char*)drive ) + dirstr;
 	} else {
-		return tjs_string( drive ) + dirstr.substr(0,dirstr.length()-1);
+		return tjs_string( (tjs_char*)drive ) + dirstr.substr(0,dirstr.length()-1);
 	}
 }
 // 末尾の /\ を含む
 inline tjs_string ExtractFilePath( const tjs_string& path ) {
-	tjs_char drive[_MAX_DRIVE];
-	tjs_char dir[_MAX_DIR];
-	_wsplitpath_s(path.c_str(), drive, _MAX_DRIVE, dir,_MAX_DIR, NULL, 0, NULL, 0 );
-	return tjs_string( drive ) + tjs_string( dir );
+	wchar_t drive[_MAX_DRIVE];
+	wchar_t dir[_MAX_DIR];
+	_wsplitpath_s((const wchar_t*)path.c_str(), drive, _MAX_DRIVE, dir,_MAX_DIR, NULL, 0, NULL, 0 );
+	return tjs_string( (tjs_char*)drive ) + tjs_string( (tjs_char*)dir );
 }
 
 inline bool DirectoryExists( const tjs_string& path ) {
-	return (0!=::PathIsDirectory(path.c_str()));
+	return (0!=::PathIsDirectory((const wchar_t*)path.c_str()));
 }
 
 inline bool FileExists( const tjs_string& path ) {
-	return ( (0!=::PathFileExists(path.c_str())) && (0==::PathIsDirectory(path.c_str())) );
+	return ( (0!=::PathFileExists((const wchar_t*)path.c_str())) && (0==::PathIsDirectory((const wchar_t*)path.c_str())) );
 	return false;
 }
 
 inline tjs_string ChangeFileExt( const tjs_string& path, const tjs_string& ext ) {
-	tjs_char drive[_MAX_DRIVE];
-	tjs_char dir[_MAX_DIR];
-	tjs_char fname[_MAX_FNAME];
-	_wsplitpath_s( path.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0 );
-	return tjs_string( drive ) + tjs_string( dir ) + tjs_string( fname ) + ext;
+	wchar_t drive[_MAX_DRIVE];
+	wchar_t dir[_MAX_DIR];
+	wchar_t fname[_MAX_FNAME];
+	_wsplitpath_s( (const wchar_t*)path.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0 );
+	return tjs_string( (tjs_char*)drive ) + tjs_string( (tjs_char*)dir ) + tjs_string( (tjs_char*)fname ) + ext;
 }
 inline tjs_string ExtractFileName( const tjs_string& path ) {
-	tjs_char fname[_MAX_FNAME];
-	tjs_char ext[_MAX_EXT];
-	_wsplitpath_s( path.c_str(), NULL, 0, NULL, 0, fname, _MAX_FNAME, ext, _MAX_EXT );
-	return tjs_string( fname ) + tjs_string( ext );
+	wchar_t fname[_MAX_FNAME];
+	wchar_t ext[_MAX_EXT];
+	_wsplitpath_s( (const wchar_t*)path.c_str(), NULL, 0, NULL, 0, fname, _MAX_FNAME, ext, _MAX_EXT );
+	return tjs_string( (tjs_char*)fname ) + tjs_string( (tjs_char*)ext );
 }
 inline tjs_string ExtractFileExt( const tjs_string& path ) {
-	tjs_char ext[_MAX_EXT];
-	_wsplitpath_s( path.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, ext, _MAX_EXT );
-	return tjs_string( ext );
+	wchar_t ext[_MAX_EXT];
+	_wsplitpath_s( (const wchar_t*)path.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, ext, _MAX_EXT );
+	return tjs_string( (tjs_char*)ext );
 }
 inline tjs_string ExpandUNCFileName( const tjs_string& path ) {
 	tjs_string result;
 	DWORD InfoSize = 0;
-	if( ERROR_MORE_DATA == WNetGetUniversalName( path.c_str(), UNIVERSAL_NAME_INFO_LEVEL, NULL, &InfoSize) ) {
+	if( ERROR_MORE_DATA == WNetGetUniversalName( (const wchar_t*)path.c_str(), UNIVERSAL_NAME_INFO_LEVEL, NULL, &InfoSize) ) {
 		UNIVERSAL_NAME_INFO* pInfo = reinterpret_cast<UNIVERSAL_NAME_INFO*>( ::GlobalAlloc(GMEM_FIXED, InfoSize) );
-		DWORD ret = ::WNetGetUniversalName( path.c_str(), UNIVERSAL_NAME_INFO_LEVEL, pInfo, &InfoSize);
+		DWORD ret = ::WNetGetUniversalName( (const wchar_t*)path.c_str(), UNIVERSAL_NAME_INFO_LEVEL, pInfo, &InfoSize);
 		if( NO_ERROR == ret ) {
-			result = tjs_string(pInfo->lpUniversalName);
+			result = tjs_string((const tjs_char*)pInfo->lpUniversalName);
 		}
 		::GlobalFree(pInfo);
 	} else {
-		tjs_char fullpath[_MAX_PATH];
-		result = tjs_string( _wfullpath( fullpath, path.c_str(), _MAX_PATH ) );
+		wchar_t fullpath[_MAX_PATH];
+		result = tjs_string( (const tjs_char*)_wfullpath( fullpath, (const wchar_t*)path.c_str(), _MAX_PATH ) );
 	}
 	return result;
 }

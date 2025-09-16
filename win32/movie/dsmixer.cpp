@@ -142,7 +142,7 @@ void __stdcall tTVPDSMixerVideoOverlay::BuildGraph( HWND callbackwin, IStream *s
 			m_Reader->AddRef();
 
 			// add fliter
-			if( FAILED(hr = GraphBuilder()->AddFilter( m_Reader, TJS_W("Stream Reader"))) )
+			if( FAILED(hr = GraphBuilder()->AddFilter( m_Reader, L"Stream Reader")) )
 				ThrowDShowException(TJS_W("Failed to call IFilterGraph::AddFilter."), hr);
 	
 			// AddFilterしたのでRelease
@@ -310,7 +310,7 @@ void tTVPDSMixerVideoOverlay::AddVMR9Filer( CComPtr<IBaseFilter> &pVMR9 )
 	if( FAILED(hr = pVMR9.CoCreateInstance(CLSID_VideoMixingRenderer9, NULL, CLSCTX_INPROC) ) )
 		ThrowDShowException(TJS_W("Failed to create VMR9 Filter. This component requires DirectX9."), hr);
 
-	if( FAILED(hr = GraphBuilder()->AddFilter( pVMR9, TJS_W("Video Mixing Render 9"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter( pVMR9, L"Video Mixing Render 9")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pVMR9, L\"Video Mixing Render 9\")."), hr);
 
 	{

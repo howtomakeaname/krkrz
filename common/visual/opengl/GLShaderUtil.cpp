@@ -12,23 +12,23 @@
 GLuint CompileShader(GLenum type, const std::string &source)
 {
     GLuint shader = glCreateShader(type);
-	CheckGLErrorAndLog( TJS_W( "glCreateShader" ) );
+	CheckGLErrorAndLog("glCreateShader");
 
     const char *sourceArray[1] = { source.c_str() };
     glShaderSource(shader, 1, sourceArray, NULL);
-	CheckGLErrorAndLog( TJS_W( "glShaderSource" ) );
+	CheckGLErrorAndLog("glShaderSource");
     glCompileShader(shader);
-	CheckGLErrorAndLog( TJS_W( "glCompileShader" ) );
+	CheckGLErrorAndLog("glCompileShader");
 
     GLint compileResult;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compileResult);
-	CheckGLErrorAndLog( TJS_W( "glGetShaderiv" ) );
+	CheckGLErrorAndLog("glGetShaderiv");
 
     if (compileResult == 0)
     {
         GLint infoLogLength;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
-		CheckGLErrorAndLog( TJS_W( "glGetShaderiv" ) );
+		CheckGLErrorAndLog("glGetShaderiv");
 
         // Info log length includes the null terminator, so 1 means that the info log is an empty
         // string.
@@ -36,7 +36,7 @@ GLuint CompileShader(GLenum type, const std::string &source)
         {
             std::vector<GLchar> infoLog(infoLogLength);
             glGetShaderInfoLog(shader, static_cast<GLsizei>(infoLog.size()), NULL, &infoLog[0]);
-			CheckGLErrorAndLog( TJS_W( "glGetShaderInfoLog" ) );
+			CheckGLErrorAndLog("glGetShaderInfoLog");
             TVPAddLog( TJS_W("GL : shader compilation failed:") + ttstr(&infoLog[0])  );
         }
         else
@@ -58,14 +58,14 @@ GLuint CheckLinkStatusAndReturnProgram(GLuint program, bool outputErrorMessages)
 
     GLint linkStatus;
     glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
-	CheckGLErrorAndLog( TJS_W( "glGetProgramiv" ) );
+	CheckGLErrorAndLog("glGetProgramiv");
     if (linkStatus == 0)
     {
         if (outputErrorMessages)
         {
             GLint infoLogLength;
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-			CheckGLErrorAndLog( TJS_W( "glGetProgramiv" ) );
+			CheckGLErrorAndLog("glGetProgramiv");
 
             // Info log length includes the null terminator, so 1 means that the info log is an
             // empty string.
@@ -74,7 +74,7 @@ GLuint CheckLinkStatusAndReturnProgram(GLuint program, bool outputErrorMessages)
                 std::vector<GLchar> infoLog(infoLogLength);
                 glGetProgramInfoLog(program, static_cast<GLsizei>(infoLog.size()), nullptr,
                                     &infoLog[0]);
-				CheckGLErrorAndLog( TJS_W( "glGetProgramInfoLog" ) );
+				CheckGLErrorAndLog("glGetProgramInfoLog");
 
                 TVPAddLog( TJS_W("GL : program link failed: ") + ttstr(&infoLog[0]) );
             }
@@ -97,7 +97,7 @@ GLuint CompileProgramWithTransformFeedback(
     GLenum bufferMode)
 {
     GLuint program = glCreateProgram();
-	CheckGLErrorAndLog( TJS_W("glCreateProgram") );
+	CheckGLErrorAndLog("glCreateProgram");
 
     GLuint vs = CompileShader(GL_VERTEX_SHADER, vsSource);
     GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fsSource);
@@ -111,14 +111,14 @@ GLuint CompileProgramWithTransformFeedback(
     }
 
     glAttachShader(program, vs);
-	CheckGLErrorAndLog( TJS_W( "glAttachShader" ) );
+	CheckGLErrorAndLog("glAttachShader");
     glDeleteShader(vs);
-	CheckGLErrorAndLog( TJS_W( "glDeleteShader" ) );
+	CheckGLErrorAndLog("glDeleteShader");
 
     glAttachShader(program, fs);
-	CheckGLErrorAndLog( TJS_W( "glAttachShader" ) );
+	CheckGLErrorAndLog("glAttachShader");
     glDeleteShader(fs);
-	CheckGLErrorAndLog( TJS_W( "glDeleteShader" ) );
+	CheckGLErrorAndLog("glDeleteShader");
 
     if (transformFeedbackVaryings.size() > 0)
     {
@@ -131,11 +131,11 @@ GLuint CompileProgramWithTransformFeedback(
 
         glTransformFeedbackVaryings(program, static_cast<GLsizei>(transformFeedbackVaryings.size()),
                                     &constCharTFVaryings[0], bufferMode);
-		CheckGLErrorAndLog( TJS_W( "glTransformFeedbackVaryings" ) );
+		CheckGLErrorAndLog("glTransformFeedbackVaryings");
     }
 
     glLinkProgram(program);
-	CheckGLErrorAndLog( TJS_W( "glLinkProgram" ) );
+	CheckGLErrorAndLog("glLinkProgram");
 
     return CheckLinkStatusAndReturnProgram(program, true);
 }

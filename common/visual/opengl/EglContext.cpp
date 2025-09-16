@@ -3,7 +3,7 @@
 #include "MsgIntf.h"
 #include "DebugIntf.h"
 #include "EglContext.h"
-
+#include "LogIntf.h"
 
 #ifndef EGL_ANGLE_software_display
 #define EGL_ANGLE_software_display 1
@@ -345,12 +345,13 @@ bool tTVPEGLContext::Initialize()
 	if (!eglInited) {
 		int egl_version = gladLoadEGL(mDisplay, gladload);
 		if (!egl_version) {
-			TVPAddLog( TJS_W("Unable to reload glad EGL") );
+			TVPLOG_ERROR("Unable to reload glad EGL");
 			Destroy();
 			return false;
 		}
-	    //fprintf(stderr, "Loaded EGL %d.%d after reload.\n",
-    	//       GLAD_VERSION_MAJOR(egl_version), GLAD_VERSION_MINOR(egl_version));
+		int major = GLAD_VERSION_MAJOR(egl_version);
+		int minor = GLAD_VERSION_MINOR(egl_version);
+	    TVPLOG_INFO("Loaded EGL {}.{} after reload.", major, minor);
 		eglInited = true;
 	}
 
@@ -702,8 +703,9 @@ void tTVPEGLContext::InitEGL()
 		if (!egl_version) {
 			TVPThrowExceptionMessage( TJS_W("Unable to initialize glad EGL.") );
 		}
-		//fprintf(stderr, "Loaded EGL %d.%d on first load.\n",
-		//       GLAD_VERSION_MAJOR(egl_version), GLAD_VERSION_MINOR(egl_version));
+		int major = GLAD_VERSION_MAJOR(egl_version);
+		int minor = GLAD_VERSION_MINOR(egl_version);
+		TVPLOG_INFO("Loaded EGL {}.{} on first load.", major, minor);
 	}
 }
 

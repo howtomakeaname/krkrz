@@ -67,7 +67,7 @@ bool TVPProjectDirSelected = false;
 // (or other security modules like XP3 encryption module) to check
 // the changes which is not intended by the contents author.
 const static char __declspec(align(16)) TVPSystemSecurityOptions[] =
-"-- TVPSystemSecurityOptions disablemsgmap(0):forcedataxp3(0):acceptfilenameargument(0) --";
+"-- TVPSystemSecurityOptions disablemsgmap(0):forcedataxp3(0):acceptfilenameargument(0):disabled3d9(0):disableapplock(0) --";
 //---------------------------------------------------------------------------
 int GetSystemSecurityOption(const char *name)
 {
@@ -236,7 +236,7 @@ static void TVPWriteHWELogFile()
 	TVPEnsureDataPathDirectory();
 	TJS_strcpy(TVPHWExceptionLogFilename, TVPNativeDataPath.c_str());
 	TJS_strcat(TVPHWExceptionLogFilename, TJS_W("hwexcept.log"));
-	TVPHWExceptionLogHandle = CreateFile(TVPHWExceptionLogFilename, GENERIC_WRITE,
+	TVPHWExceptionLogHandle = CreateFile((const wchar_t*)TVPHWExceptionLogFilename, GENERIC_WRITE,
 		FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if(TVPHWExceptionLogHandle == INVALID_HANDLE_VALUE) return;
@@ -329,7 +329,7 @@ void TVPHandleSEHException( int ErrorCode, EXCEPTION_RECORD *P, unsigned long os
 	VirtualQuery(d->EIP, &mbi, sizeof(mbi));
 	if(mbi.State == MEM_COMMIT)
 	{
-		if(!GetModuleFileName((HMODULE)mbi.AllocationBase, d->Module,
+		if(!GetModuleFileName((HMODULE)mbi.AllocationBase, (wchar_t*)d->Module,
 			MAX_PATH))
 		{
 			d->Module[0] = 0;
@@ -386,7 +386,7 @@ void TVPHandleSEHException( int ErrorCode, EXCEPTION_RECORD *P, unsigned long os
 			VirtualQuery((void*)d->ESP[p], &mbi, sizeof(mbi));
 			if(mbi.State == MEM_COMMIT)
 			{
-				tjs_char module[MAX_PATH];
+				wchar_t module[MAX_PATH];
 				if(::GetModuleFileName((HMODULE)mbi.AllocationBase, module, MAX_PATH))
 				{
 					tjs_uint8 buf[16];
@@ -818,10 +818,10 @@ void TVPDumpHWException()
 		VirtualQuery((void*)d->CallTrace[s], &mbi, sizeof(mbi));
 		if(mbi.State == MEM_COMMIT)
 		{
-			tjs_char module[MAX_PATH];
+			wchar_t module[MAX_PATH];
 			if(::GetModuleFileName((HMODULE)mbi.AllocationBase, module, MAX_PATH))
 			{
-				line += ttstr(ExtractFileName(module).c_str());
+				line += ttstr(ExtractFileName((const tjs_char*)module).c_str());
 				TJS_snprintf(buf, BUF_SIZE, TJS_W(" base 0x%p"), mbi.AllocationBase);
 				line += buf;
 			}
@@ -920,8 +920,8 @@ void TVPInitializeBaseSystems()
 static int CALLBACK TVPBrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lParam,LPARAM lpData)
 {
     if(uMsg==BFFM_INITIALIZED){
-		tjs_char exeDir[MAX_PATH];
-		TJS_strcpy(exeDir, IncludeTrailingBackslash(ExtractFileDir(ExePath())).c_str());
+		wchar_t exeDir[MAX_PATH];
+		TJS_strcpy((tjs_char*)exeDir, IncludeTrailingBackslash(ExtractFileDir(ExePath())).c_str());
         ::SendMessage(hwnd,BFFM_SETSELECTION,(WPARAM)TRUE,(LPARAM)exeDir);
     }
     return 0;
@@ -1058,8 +1058,8 @@ void TVPBeforeSystemInit()
 				if(_wargv[i][0] != TJS_W('-'))
 				{
 					// TODO: set the current directory
-					::SetCurrentDirectory( exeDir );
-					TJS_strncpy(buf, ttstr(_wargv[i]).c_str(), MAX_PATH-1);
+					::SetCurrentDirectory( (const wchar_t*)exeDir );
+					TJS_strncpy(buf, (tjs_char*)_wargv[i], MAX_PATH-1);
 					buf[MAX_PATH-1] = TJS_W('\0');
 					if(DirectoryExists(buf)) // is directory?
 						TJS_strcat(buf, TJS_W("\\"));
@@ -1080,7 +1080,7 @@ void TVPBeforeSystemInit()
 		{
 			tjs_char path[MAX_PATH];
 			tjs_char *dum = 0;
-			GetFullPathName(buf, MAX_PATH-1, path, &dum);
+			GetFullPathName((wchar_t*)buf, MAX_PATH-1, (wchar_t*)path, (wchar_t**)&dum);
 			TJS_strcpy(buf, path);
 			TVPProjectDirSelected = false;
 			bufset = true;
@@ -1110,7 +1110,7 @@ void TVPBeforeSystemInit()
 	if(forcedataxp3 == 2 && !nosel)
 	{
 		extern bool TVP_CUSTOM_BOOTLOADER(wchar_t *buf, size_t maxlen);
-		if (TVP_CUSTOM_BOOTLOADER(buf, MAX_PATH))
+		if (TVP_CUSTOM_BOOTLOADER((wchar_t*)buf, MAX_PATH))
 		{
 			TVPProjectDirSelected = true;
 			bufset = true;
@@ -1191,7 +1191,7 @@ void TVPBeforeSystemInit()
 	if(!forcedataxp3 && (!nosel || forcesel))
 	{
 		BOOL			bRes;
-		tjs_char			chPutFolder[MAX_PATH];
+		wchar_t			chPutFolder[MAX_PATH];
 		LPITEMIDLIST	pidlRetFolder;
 		BROWSEINFO		stBInfo;
 		::ZeroMemory( &stBInfo, sizeof(stBInfo) );
@@ -1199,7 +1199,7 @@ void TVPBeforeSystemInit()
 		stBInfo.pidlRoot = NULL;
 		stBInfo.hwndOwner = NULL;
 		stBInfo.pszDisplayName = chPutFolder;
-		stBInfo.lpszTitle = TVPSelectXP3FileOrFolder;
+		stBInfo.lpszTitle = (const wchar_t*)(const tjs_char*)TVPSelectXP3FileOrFolder;
 		stBInfo.ulFlags = BIF_BROWSEINCLUDEFILES|BIF_RETURNFSANCESTORS|BIF_DONTGOBELOWDOMAIN|BIF_RETURNONLYFSDIRS;
 		stBInfo.lpfn = TVPBrowseCallbackProc;
 		stBInfo.lParam = NULL;
@@ -1208,7 +1208,7 @@ void TVPBeforeSystemInit()
 		if( pidlRetFolder != NULL ) {
 			bRes = ::SHGetPathFromIDList( pidlRetFolder, chPutFolder );
 			if( bRes != FALSE ) {
-				wcsncpy( buf, chPutFolder, MAX_PATH );
+				wcsncpy( (wchar_t*)buf, chPutFolder, MAX_PATH );
 				tjs_int buflen = (tjs_int)TJS_strlen(buf);
 				if( buflen >= 1 ) {
 					if( buf[buflen-1] != TJS_W('\\') && buflen < (MAX_PATH-2) ) {
@@ -1819,7 +1819,7 @@ bool TVPCheckPrintDataPath()
 		if(!TJS_strcmp(_wargv[i], TJS_W("-printdatapath"))) // this does not refer TVPGetCommandLine
 		{
 			TVPInitProgramArgumentsAndDataPath(true);
-			wprintf(TJS_W("%s\n"), TVPNativeDataPath.c_str());
+			wprintf(L"%s\n", (wchar_t*)TVPNativeDataPath.c_str());
 
 			return true; // processed
 		}
@@ -1869,7 +1869,7 @@ static void TVPExecuteAsync( const tjs_string& progname)
 	BOOL ret =
 		CreateProcess(
 			NULL,
-			const_cast<LPTSTR>(progname.c_str()),
+			const_cast<LPTSTR>((const wchar_t*)progname.c_str()),
 			NULL,
 			NULL,
 			FALSE,
@@ -1902,7 +1902,7 @@ static bool TVPWaitWritePermit(const tjs_string& fn)
 	tjs_int timeout = 10; // 10/1 = 5 seconds
 	while(true)
 	{
-		HANDLE h = CreateFile(fn.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL,
+		HANDLE h = CreateFile((const wchar_t*)fn.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL,
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if(h != INVALID_HANDLE_VALUE)
 		{

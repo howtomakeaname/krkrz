@@ -68,7 +68,7 @@ public:
 	tTVPApplication();
 	virtual ~tTVPApplication();
 
-	TTVPWindowForm *MainWindowForm() { return windows_.size() > 0 ? windows_[0] : nullptr; }
+	TTVPWindowForm *MainWindowForm() const { return windows_.size() > 0 ? windows_[0] : nullptr; }
 
 private:
 	NativeEvent* createNativeEvent();
@@ -94,6 +94,9 @@ public:
 
 	// 画面サイズ変更通知
 	void ResizeScreen();
+
+	// 全ウインドウの再描画要請
+	void RequestUpdate();
 
 	// 処理実行
 	void Dispatch();
@@ -153,19 +156,8 @@ public:
 	void DelWindow( TTVPWindowForm* window );
 
 	void SendMessage( void *window, tjs_int message, tjs_int64 wparam, tjs_int64 lparam );
-	void SendTouchMessage( void *window, tjs_int type, float x, float y, float c, int id, tjs_int64 tick );
+	void SendTouchMessage( void *window, tjs_int type, float x, float y, float c, int id, tjs_uint64 tick );
 	void SendMouseMessage( void *window, tjs_int type, int button, int shift, int x, int y);
-
-	// ----------------------------------------------------------------------
-	// リソース処理
-	// ----------------------------------------------------------------------
-
-	// システムリソースの読み出し
-	std::shared_ptr<char> ReadResource(const tjs_char *resourceName, tjs_uint64 *flen=0);
-	bool isExistentResoruce(const tjs_char *resourceName);
-
-	std::vector<std::string>* loadLinesFromFile(const tjs_char *path);
-	std::vector<std::string>* loadLinesFromResource(const tjs_char *path);
 
 	// ----------------------------------------------------------------------------
 	// 環境依存機能群
@@ -218,10 +210,8 @@ public:
 	virtual bool GetActivating() const = 0;
 	virtual bool GetNotMinimizing() const = 0;
 
-	virtual tjs_uint32 GetTickCount() const = 0;
-
-	// アプリ処理用の DrawDevice実装を返す
-	virtual tTJSNativeClass* CreateDrawDevice() = 0;
+	// アプリ処理用の標準の DrawDevice実装を返す
+	virtual tTJSNativeClass* GetDefaultDrawDevice() = 0;
 
 	// アプリ処理用の WindowFOrm 実装を返す
 	virtual TTVPWindowForm *CreateWindowForm(class tTJSNI_Window *win) = 0;
@@ -243,7 +233,14 @@ public:
 	virtual tjs_uint64 GetTotalPhysMemory() = 0;
 
 	// シェル実行
-	virtual bool ShellExecute(const tjs_char *target, const tjs_char *param) = 0;
+	virtual bool ShellExecute(const tjs_char *target, const tjs_char *param) {
+		return false; // デフォルトは実装しない
+	};
+
+	// アプリロック取得
+	virtual bool CreateAppLock(const ttstr &lockname) { 
+		return true; // デフォルトはロックしない
+	}
 
 	// 乱数初期化用
 	virtual void InitRandomGenerator();
@@ -259,9 +256,6 @@ public:
 	// 解像度情報
 	virtual tjs_int GetDensity() const;
 
-	// コンソール出力用
-	virtual void PrintConsole( const tjs_char* mes, unsigned long len, bool iserror = false ) = 0;
-
 	// キー押し下げ状態取得
 	virtual bool GetAsyncKeyState(tjs_uint keycode, bool getcurrent);
 
@@ -272,16 +266,11 @@ public:
 	void BeginContinuousEvent();
 	void EndContinuousEvent();
 
-	int PRINTF( const tjs_char* fmt, ...); //< ログ用
-	int DPRINTF( const tjs_char* fmt, ...); //< ログ（デバッグ）用
-
-	virtual int GetJoypadType(int no) { return 0; } //< joypadの種別（環境依存値）
+	virtual tjs_string GetJoypadType(int no) { return TJS_W(""); } //< joypadの種別（環境依存値）
 
 	// ----------------------------------------------------------------------
     // 動画関係処理
 	// ----------------------------------------------------------------------
-public:
-	virtual bool MovieAudioEnable() { return false; }
 
 protected:
 	void UpdateVideoOverlay();

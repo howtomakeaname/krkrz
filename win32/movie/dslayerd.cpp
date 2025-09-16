@@ -89,7 +89,7 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 
 		if( IsWindowsMediaFile(type) )
 		{
-			if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, TJS_W("Buffer Renderer"))) )
+			if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, L"Buffer Renderer")) )
 				ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pBRender, L\"Buffer Renderer\")."), hr);
 
 			BuildWMVGraph( pBRender, stream );
@@ -109,7 +109,7 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 			m_Reader->AddRef();
 
 			// add fliter
-			if( FAILED(hr = GraphBuilder()->AddFilter( m_Reader, TJS_W("Stream Reader"))) )
+			if( FAILED(hr = GraphBuilder()->AddFilter( m_Reader, L"Stream Reader")) )
 				ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( m_Reader, L\"Stream Reader\")."), hr);
 
 			// AddFilter したのでリリースする。
@@ -145,7 +145,7 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 				if( FAILED(hr = GraphBuilder()->RemoveFilter( pRender ) ) )
 					ThrowDShowException(TJS_W("Failed to call GraphBuilder->RemoveFilter(pRenderPin)."), hr);
 	
-				if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, TJS_W("Buffer Renderer"))) )
+				if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, L"Buffer Renderer")) )
 					ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pBRender, L\"Buffer Renderer\")."), hr);
 	
 				CComPtr<IPin>	pRdrPinIn;
@@ -208,7 +208,7 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 				else
 #endif
 				{
-					if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, TJS_W("Buffer Renderer"))) )
+					if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, L"Buffer Renderer")) )
 						ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pBRender, L\"Buffer Renderer\")."), hr);
 					BuildMPEGGraph( pBRender, m_Reader); // may throw an exception
 				}

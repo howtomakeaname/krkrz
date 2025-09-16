@@ -1219,7 +1219,7 @@ void tTVPComplexRect::DumpChain()
 		TJS_snprintf(tmp, 200, TJS_W("%p (%p) %p : "), it.Get().Prev, &(it.Get()), it.Get().Next);
 		str += tmp;
 	}
-	OutputDebugString(str.c_str());
+	OutputDebugString((wchar_t*)str.c_str());
 #endif
 }
 //---------------------------------------------------------------------------

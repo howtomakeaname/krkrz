@@ -2,6 +2,11 @@
 #include "tjsCommHead.h"
 #include "NullDrawDevice.h"
 
-tTJSNativeClass* TVPCreateDefaultDrawDevice() {
-    return new tTJSNC_NullDrawDevice();
+static tTJSNativeClass *nativeClass = NULL;
+
+tTJSNativeClass* TVPGetDefaultDrawDevice() {
+    if (!nativeClass) {
+        nativeClass = new tTJSNC_NullDrawDevice();
+    }
+    return nativeClass;
 }

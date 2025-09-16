@@ -24,8 +24,7 @@ tjs_error TJS_INTF_METHOD tTJSNI_Offscreen::Construct(tjs_int numparams, tTJSVar
 	tjs_int width = *param[0];
 	tjs_int height = *param[1];
 
-	GLint format =  tTJSNI_Texture::supportBGRA() ? GL_BGRA_EXT : GL_RGBA;
-	bool result = FrameBuffer.create( width, height, format );
+	bool result = FrameBuffer.create( width, height);
 	if( result == false ) {
 		TVPThrowExceptionMessage( TJS_W("FBO create error.") );
 	}
@@ -59,7 +58,7 @@ tjs_int64 tTJSNI_Offscreen::GetVBOHandle() const {
 }
 //---------------------------------------------------------------------------
 void tTJSNI_Offscreen::ExchangeTexture( tTJSNI_Texture* texture ) {
-	if( FrameBuffer.width() == texture->GetMemoryWidth() && FrameBuffer.height() == texture->GetMemoryHeight() && FrameBuffer.format() == texture->GetImageFormat() ) {
+	if( FrameBuffer.width() == texture->GetMemoryWidth() && FrameBuffer.height() == texture->GetMemoryHeight() && texture->format() == tTVPTextureColorFormat::RGBA) {
 		GLuint oldTex = FrameBuffer.textureId();
 		bool result = FrameBuffer.exchangeTexture( (GLuint)texture->GetNativeHandle() );
 		if( !result ) {

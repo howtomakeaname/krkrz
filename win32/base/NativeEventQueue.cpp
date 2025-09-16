@@ -9,7 +9,7 @@ int NativeEventQueueImplement::CreateUtilWindow() {
 	wc_.lpfnWndProc = ::DefWindowProc;
 	wc_.hInstance = ::GetModuleHandle(NULL);
 	//wc_.lpszClassName = TJS_W("TVPUtilWindow");
-	wc_.lpszClassName = TJS_W("TVPQueueWindow");
+	wc_.lpszClassName = L"TVPQueueWindow";
 
 	WNDCLASSEX tmpwc = { sizeof(WNDCLASSEX) };
 	BOOL ClassRegistered = ::GetClassInfoEx( wc_.hInstance, wc_.lpszClassName, &tmpwc );
@@ -19,7 +19,7 @@ int NativeEventQueueImplement::CreateUtilWindow() {
 			return HRESULT_FROM_WIN32(::GetLastError());
 		}
 	}
-	window_handle_ = ::CreateWindowEx( WS_EX_TOOLWINDOW, wc_.lpszClassName, TJS_W(""),
+	window_handle_ = ::CreateWindowEx( WS_EX_TOOLWINDOW, wc_.lpszClassName, L"",
 						WS_POPUP, 0, 0, 0, 0, NULL, NULL, wc_.hInstance, NULL );
 
 	if( window_handle_ == NULL ) {

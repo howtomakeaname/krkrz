@@ -51,7 +51,7 @@ bool TVPProjectDirSelected = false;
 // (or other security modules like XP3 encryption module) to check
 // the changes which is not intended by the contents author.
 const static char TVPSystemSecurityOptions[] =
-"-- TVPSystemSecurityOptions disablemsgmap(0):forcedataxp3(0):acceptfilenameargument(0) --";
+"-- TVPSystemSecurityOptions disablemsgmap(0):forcedataxp3(0):acceptfilenameargument(0):disableapplock(0) --";
 //---------------------------------------------------------------------------
 int GetSystemSecurityOption(const char *name)
 {
@@ -386,7 +386,8 @@ void TVPMainWindowClosed()
 //---------------------------------------------------------------------------
 static std::vector<std::string> * TVPGetEmbeddedOptions()
 {
-	return Application->loadLinesFromResource(TJS_W("config.cf"));
+	tjs_string path = Application->ResourcePath() + TJS_W("config.cf");
+	return TVPReadLines(path.c_str());
 }
 
 //---------------------------------------------------------------------------
@@ -402,7 +403,7 @@ static std::vector<std::string> * TVPGetConfigFileOptions(const tjs_string& file
 	{
 		try
 		{
-			ret = Application->loadLinesFromFile(filename.c_str());
+			ret = TVPReadLines(filename.c_str());
 		}
 		catch(Exception & e)
 		{

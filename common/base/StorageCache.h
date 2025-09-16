@@ -70,7 +70,7 @@ public:
 };
 
 bool TVPCheckStorageCache(const ttstr &name, bool update=false);
-iTJSBinaryStream *TVPGetStorageCache(const ttstr &name);
+iTJSBinaryStream *TVPGetStorageCache(const ttstr &name, bool entry=false);
 bool TVPClearStorageCache(const ttstr &name);
 void TVPClearOldStorageCache(int keepTime, bool force=false);
 void TVPClearAllStorageCache();

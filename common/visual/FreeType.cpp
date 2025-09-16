@@ -19,7 +19,7 @@
 #include "uni_cp932.h"
 #include "cp932_uni.h"
 
-#include "BinaryStream.h"
+#include "StorageCache.h"
 #include "MsgIntf.h"
 #include "SysInitIntf.h"
 #include "ComplexRect.h"
@@ -75,7 +75,8 @@ OpenFontFile(const tjs_string &path)
         }
         _fontfiles.erase(n);
     }
-    auto fontfile = std::shared_ptr<iTJSBinaryStream>(TVPCreateBinaryStreamForRead( path, TJS_W("")));
+	// フォント用のファイルはキャッシュを介してオンメモリになるようにする
+	auto fontfile = std::shared_ptr<iTJSBinaryStream>(TVPGetStorageCache(path, true));
     _fontfiles[path] = fontfile;
 	entryFont(fontfile);
 	//TVPAddLog(TVPFormatMessage(TJS_W("openFont:%1"), ttstr(path.c_str())));

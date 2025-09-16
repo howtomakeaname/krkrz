@@ -49,7 +49,7 @@ const tjs_char *TVPGetDefaultFontName() {
 		HFONT font = (HFONT)obj;
 		LOGFONT logfont={0};
 		::GetObject( font, sizeof(LOGFONT), &logfont );
-		TVPDefaultFontName.AssignMessage( logfont.lfFaceName );
+		TVPDefaultFontName.AssignMessage( (const tjs_char*)logfont.lfFaceName );
 	}
 	return TVPDefaultFontName;
 }
@@ -94,7 +94,7 @@ tTVPSysFont::tTVPSysFont() : hFont_(INVALID_HANDLE_VALUE), hOldFont_(INVALID_HAN
 	logfont.lfHeight = -12;
 	logfont.lfWidth = 0;
 	logfont.lfCharSet = DEFAULT_CHARSET;
-	TJS_strncpy_s( logfont.lfFaceName, LF_FACESIZE, TVPGetDefaultFontName(), LF_FACESIZE );
+	TJS_strncpy_s( (tjs_char*)logfont.lfFaceName, LF_FACESIZE, TVPGetDefaultFontName(), LF_FACESIZE );
 	logfont.lfItalic = FALSE;
 	logfont.lfUnderline = FALSE;
 	logfont.lfStrikeOut = FALSE;
@@ -118,7 +118,7 @@ tTVPSysFont::tTVPSysFont( const tTVPFont &font ) : hFont_(INVALID_HANDLE_VALUE),
 	LogFont.lfQuality = DEFAULT_QUALITY;
 	LogFont.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
 	tjs_string face = TVPFontSystem->GetBeingFont(font.Face.AsStdString());
-	TJS_strncpy_s( LogFont.lfFaceName, LF_FACESIZE, face.c_str(), LF_FACESIZE -1);
+	TJS_strncpy_s( (tjs_char*)LogFont.lfFaceName, LF_FACESIZE, face.c_str(), LF_FACESIZE -1);
 	LogFont.lfFaceName[LF_FACESIZE-1] = 0;
 
 	ApplyFont( &LogFont );
@@ -164,7 +164,7 @@ bool tTVPSysFont::Assign( const tTVPFont &font ) {
 	LogFont.lfQuality = DEFAULT_QUALITY;
 	LogFont.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
 	tjs_string face = TVPFontSystem->GetBeingFont(font.Face.AsStdString());
-	TJS_strncpy_s( LogFont.lfFaceName, LF_FACESIZE, face.c_str(), LF_FACESIZE -1);
+	TJS_strncpy_s( (tjs_char*)LogFont.lfFaceName, LF_FACESIZE, face.c_str(), LF_FACESIZE -1);
 	LogFont.lfFaceName[LF_FACESIZE-1] = 0;
 	return ApplyFont( &LogFont );
 }
@@ -261,7 +261,7 @@ static void SetDefaultLogFont( LOGFONT& l, const tjs_char* face ) {
 	l.lfQuality = DEFAULT_QUALITY;
 	l.lfPitchAndFamily = 0;
 	if( face ) {
-		TJS_strncpy_s( l.lfFaceName, LF_FACESIZE, face, LF_FACESIZE );
+		TJS_strncpy_s( (tjs_char*)l.lfFaceName, LF_FACESIZE, face, LF_FACESIZE );
 	} else {
 		l.lfFaceName[0] = '\0';
 	}
@@ -272,7 +272,7 @@ void TVPGetFontList(std::vector<ttstr> & list, tjs_uint32 flags, const tTVPFont 
 
 	LOGFONT clf;
 	memcpy( &clf, &l, sizeof(LOGFONT) );
-	TJS_strncpy_s( clf.lfFaceName, LF_FACESIZE, font.Face.c_str(), LF_FACESIZE );
+	TJS_strncpy_s( (tjs_char*)clf.lfFaceName, LF_FACESIZE, font.Face.c_str(), LF_FACESIZE );
 
 	HDC dc = ::GetDC(NULL);
 	BYTE charSet = DEFAULT_CHARSET;
@@ -309,7 +309,7 @@ tjs_char TVPGetDefaultCharFromFaceName( const tjs_char* face ) {
 #endif
 static int CALLBACK EnumAllFontsProc( LOGFONT *lplf, TEXTMETRIC *lptm, DWORD type, LPARAM data ) {
 	std::vector<tjs_string>* list = (std::vector<tjs_string>*)data;
-	list->push_back( tjs_string( lplf->lfFaceName) );
+	list->push_back( tjs_string( (const tjs_char*)lplf->lfFaceName) );
 	return 1;
 }
 void TVPGetAllFontList( std::vector<tjs_string>& list ) {

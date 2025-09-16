@@ -6,6 +6,8 @@
 #include "TickCount.h"
 #include "Random.h"
 #include "MsgImpl.h"
+#include "LogIntf.h"
+#include "VideoOvlIntf.h"
 
 // Androidでは変換しない, ssShiftなどで統一的に扱っている。
 tjs_uint32 TVP_TShiftState_To_uint32(TShiftState state) { return (tjs_uint32)state; }
@@ -59,18 +61,14 @@ void TTVPWindowForm::WndProc(NativeEvent& ev) {
 
 	case AM_SURFACE_CHANGED:
 		// Surfaceが切り替わった
-		DoneNativeWindow();
-		InitNativeWindow();
 		if( TJSNativeInstance ) {
 			TJSNativeInstance->ResetDrawDevice();
 			TJSNativeInstance->Update();
 		}
 		break;
 	case AM_SURFACE_CREATED:
-		InitNativeWindow();
 		break;
 	case AM_SURFACE_DESTORYED:
-		DoneNativeWindow();
 		if( TJSNativeInstance ) {
 			TJSNativeInstance->ResetDrawDevice();
 		}
@@ -80,6 +78,13 @@ void TTVPWindowForm::WndProc(NativeEvent& ev) {
 			TJSNativeInstance->Update();
 		}
 		break;
+
+	case AM_REQUEST_UPDATE:
+		if( TJSNativeInstance ) {
+			TJSNativeInstance->RequestUpdate();
+		}
+		break;
+
 	case AM_TOUCH_DOWN:
 		OnTouchDown( ev.WParamf0, ev.WParamf1, ev.LParamf0, ev.LParamf0, ev.LParam1, ev.Result );
 		break;
@@ -284,7 +289,7 @@ TTVPWindowForm::CalcDestRect(int w, int h)
         int nh = (int)(h * scale);
         int offx = (sw-nw)/2;
         int offy = (sh-nh)/2;
-        //Application->DPRINTF(TJS_W("screen size:%d,%d scale:%f dest:%d,%d,%d,%d"), sw, sh, scale, offx, offy, nw, nh);
+        TVPLOG_VERBOSE("screen size:{},{} scale:{} dest:{},{},{},{}", sw, sh, scale, offx, offy, nw, nh);
         return tTVPRect(offx,offy,offx+nw,offy+nh);
     }
     return tTVPRect(0,0,1,1);
@@ -464,7 +469,14 @@ void TTVPWindowForm::ResizeWindow(int w, int h)
 	mSurfaceHeight = h;
 };
 
-void TTVPWindowForm::OnTouchDown( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick ) 
+void TTVPWindowForm::UpdateVideoOverlay()
+{
+	if (TJSNativeInstance) {
+		TJSNativeInstance->UpdateVideoOverlay();
+	}
+}
+
+void TTVPWindowForm::OnTouchDown( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick ) 
 {
 	TranslateWindowToDrawArea(x, y);
 
@@ -477,7 +489,7 @@ void TTVPWindowForm::OnTouchDown( float x, float y, float cx, float cy, tjs_int 
 	touch_points_.TouchDown( x, y ,cx, cy, id, static_cast<tjs_uint>(tick&0xffffffff) );
 }
 
-void TTVPWindowForm::OnTouchMove( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick ) 
+void TTVPWindowForm::OnTouchMove( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick ) 
 {
 	TranslateWindowToDrawArea(x, y);
 
@@ -489,7 +501,7 @@ void TTVPWindowForm::OnTouchMove( float x, float y, float cx, float cy, tjs_int 
 	touch_points_.TouchMove( x, y, cx, cy, id, static_cast<tjs_uint>(tick&0xffffffff) );
 }
 
-void TTVPWindowForm::OnTouchUp( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick ) 
+void TTVPWindowForm::OnTouchUp( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick ) 
 {
 	TranslateWindowToDrawArea(x, y);
 
@@ -534,6 +546,7 @@ void TTVPWindowForm::OnPause()
 
 void TTVPWindowForm::OnResize()
 {
+	GetSurfaceSize(mSurfaceWidth, mSurfaceHeight);
 	if(TJSNativeInstance) {
 		// here specifies TVP_EPT_REMOVE_POST, to remove redundant onResize events.
 		TJSNativeInstance->SetUpdateDestRect();
@@ -558,10 +571,7 @@ void TTVPWindowForm::SendMessage( tjs_int message, tjs_int64 wparam, tjs_int64 l
 	PostEvent(ev);
 }
 
-static const int TOUCH_DOWN = 0;
-static const int TOUCH_MOVE = 1;
-static const int TOUCH_UP = 2;
-void TTVPWindowForm::SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_int64 tick ) 
+void TTVPWindowForm::SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_uint64 tick ) 
 {
 	NativeEvent ev;
 	ev.Message = type;

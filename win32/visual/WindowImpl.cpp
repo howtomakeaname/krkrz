@@ -50,7 +50,7 @@ tjs_int TVPGetCursor(const ttstr & name)
 	// not found
 	tTVPLocalTempStorageHolder file(place);
 
-	HCURSOR handle = ::LoadCursorFromFile( file.GetLocalName().c_str() );
+	HCURSOR handle = ::LoadCursorFromFile( (const wchar_t*)file.GetLocalName().c_str() );
 
 	if(!handle) TVPThrowExceptionMessage(TVPCannotLoadCursor, place);
 
@@ -85,6 +85,10 @@ enum tTVPFullScreenResolutionMode
 static IDirect3D9 *TVPDirect3D=NULL;
 
 static IDirect3D9* (WINAPI * TVPDirect3DCreate)( UINT SDKVersion ) = NULL;
+
+// [CUSTOM-MODIFIED] force disable d3d9.dll (require another DrawDevice)
+extern int GetSystemSecurityOption(const char *name);
+static const bool TVPDisableDirect3D9 = GetSystemSecurityOption("disabled3d9") != 0;
 
 static HMODULE TVPDirect3DDLLHandle=NULL;
 static bool TVPUseChangeDisplaySettings = false;
@@ -249,7 +253,7 @@ static void TVPInitFullScreenOptions()
 	if(TVPGetCommandLine(TJS_W("-fsmethod"), &val) )
 	{
 		ttstr str(val);
-		if(str == TJS_W("cds"))
+		if(str == TJS_W("cds") || TVPDisableDirect3D9) // [CUSTOM-MODIFIED] always -fsmethod="cds" if disable d3d9
 			TVPUseChangeDisplaySettings = true;
 		else
 			TVPUseChangeDisplaySettings = false;
@@ -302,40 +306,41 @@ void TVPDumpDirect3DDriverInformation()
 					TVPAddImportantLog(log);
 
 					// driver version(actual)
-					tjs_string driverName = ttstr(D3DID.Driver).AsStdString();
-					tjs_char driverpath[1024];
-					tjs_char *driverpath_filename = nullptr;
-					bool success = 0!=SearchPath( nullptr, driverName.c_str(), nullptr, 1023, driverpath, &driverpath_filename );
+					tjs_string driver = ttstr(D3DID.Driver).AsStdString();
+					const wchar_t *driverName = (const wchar_t*)driver.c_str();
+					wchar_t driverpath[1024];
+					wchar_t *driverpath_filename = nullptr;
+					bool success = 0!=SearchPath( nullptr, driverName, nullptr, 1023, driverpath, &driverpath_filename );
 
 					if(!success)
 					{
-						tjs_char syspath[1024];
+						wchar_t syspath[1024];
 						GetSystemDirectory( syspath, 1023);
-						TJS_strcat(syspath, TJS_W("\\drivers")); // SystemDir\drivers
-						success = 0!=SearchPath( syspath, driverName.c_str(), nullptr, 1023, driverpath, &driverpath_filename );
+						TJS_strcat((tjs_char*)syspath, TJS_W("\\drivers")); // SystemDir\drivers
+						success = 0!=SearchPath( syspath, driverName, nullptr, 1023, driverpath, &driverpath_filename );
 					}
 
 					if(!success)
 					{
-						tjs_char syspath[1024];
+						wchar_t syspath[1024];
 						GetWindowsDirectory( syspath, 1023);
-						TJS_strcat(syspath, TJS_W("\\system32")); // WinDir\system32
-						success = 0!=SearchPath( syspath, driverName.c_str(), nullptr, 1023, driverpath, &driverpath_filename );
+						TJS_strcat((tjs_char*)syspath, TJS_W("\\system32")); // WinDir\system32
+						success = 0!=SearchPath( syspath, driverName, nullptr, 1023, driverpath, &driverpath_filename );
 					}
 
 					if(!success)
 					{
-						tjs_char syspath[1024];
+						wchar_t syspath[1024];
 						GetWindowsDirectory( syspath, 1023);
-						TJS_strcat(syspath, TJS_W("\\system32\\drivers")); // WinDir\system32\drivers
-						success = 0!=SearchPath( syspath, driverName.c_str(), nullptr, 1023, driverpath, &driverpath_filename );
+						TJS_strcat((tjs_char*)syspath, TJS_W("\\system32\\drivers")); // WinDir\system32\drivers
+						success = 0!=SearchPath( syspath, driverName, nullptr, 1023, driverpath, &driverpath_filename );
 					}
 
 					if(success)
 					{
 						log = infostart + TJS_W("Driver version (") + ttstr(driverpath) + TJS_W(") : ");
 						tjs_int major, minor, release, build;
-						if(TVPGetFileVersionOf(driverpath, major, minor, release, build))
+						if(TVPGetFileVersionOf((tjs_char*)driverpath, major, minor, release, build))
 						{
 							TJS_snprintf(tmp, 256, TJS_W("%d.%d.%d.%d"), (int)major, (int)minor, (int)release, (int)build);
 							log += tmp;
@@ -388,11 +393,13 @@ void TVPDumpDirect3DDriverInformation()
 static void TVPUnloadDirect3D();
 static void TVPInitDirect3D()
 {
+	if (TVPDisableDirect3D9) return;
+
 	if(!TVPDirect3DDLLHandle)
 	{
 		// load d3d9.dll
 		TVPAddLog( (const tjs_char*)TVPInfoDirect3D );
-		TVPDirect3DDLLHandle = ::LoadLibrary( TJS_W("d3d9.dll") );
+		TVPDirect3DDLLHandle = ::LoadLibrary( L"d3d9.dll" );
 		if(!TVPDirect3DDLLHandle)
 			TVPThrowExceptionMessage(TVPCannotInitDirect3D, (const tjs_char*)TVPCannotLoadD3DDLL );
 	}
@@ -1949,6 +1956,18 @@ bool tTJSNI_Window::GetEnableTouch() const
 	return Form->GetEnableTouch();
 }
 //---------------------------------------------------------------------------
+void tTJSNI_Window::SetEnableTouchMouse( bool b )
+{
+	if(!Form) return;
+	Form->SetEnableTouchMouse(b);
+}
+//---------------------------------------------------------------------------
+bool tTJSNI_Window::GetEnableTouchMouse() const
+{
+	if(!Form) return 0;
+	return Form->GetEnableTouchMouse();
+}
+//---------------------------------------------------------------------------
 int tTJSNI_Window::GetDisplayOrientation()
 {
 	if(!Form) return orientUnknown;
@@ -2360,6 +2379,26 @@ TJS_BEGIN_NATIVE_PROP_DECL(enableTouch)
 	TJS_END_NATIVE_PROP_SETTER
 }
 TJS_END_NATIVE_PROP_DECL_OUTER(cls, enableTouch)
+//---------------------------------------------------------------------------
+TJS_BEGIN_NATIVE_PROP_DECL(enableTouchMouse)
+{
+	TJS_BEGIN_NATIVE_PROP_GETTER
+	{
+		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Window);
+		*result = _this->GetEnableTouchMouse()?1:0;
+		return TJS_S_OK;
+	}
+	TJS_END_NATIVE_PROP_GETTER
+
+	TJS_BEGIN_NATIVE_PROP_SETTER
+	{
+		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Window);
+		_this->SetEnableTouchMouse( ((tjs_int)*param) ? true : false );
+		return TJS_S_OK;
+	}
+	TJS_END_NATIVE_PROP_SETTER
+}
+TJS_END_NATIVE_PROP_DECL_OUTER(cls, enableTouchMouse)
 //---------------------------------------------------------------------------
 TJS_BEGIN_NATIVE_PROP_DECL(displayOrientation)
 {

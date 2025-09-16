@@ -856,16 +856,16 @@ const int RESOURCE_IDS[NUM_MESSAGE_MAX] = {
 void TVPLoadMessage() {
 	if( IS_LOAD_MESSAGE ) return;
 	IS_LOAD_MESSAGE = true;
-	tjs_char buffer[MAX_MESSAGE_LENGTH];
+	wchar_t buffer[MAX_MESSAGE_LENGTH];
 	HINSTANCE hInstance = ::GetModuleHandle(0);
 	for( int i = 0; i < NUM_MESSAGE_MAX; i++ ) {
 		int len = ::LoadString( hInstance, RESOURCE_IDS[i], buffer, MAX_MESSAGE_LENGTH );
 		if( len <= 0 ) {
 			TVPThrowExceptionMessage( TJS_W("Message Load Error!") );
 		}
-		tjs_char* work = new tjs_char[len+1];
+		wchar_t* work = new wchar_t[len+1];
 		wcscpy_s( work, len+1, buffer );
-		RESOURCE_MESSAGE[i] = work;
+		RESOURCE_MESSAGE[i] = (tjs_char*)work;
 	}
 	TJSInternalError.AssignMessage( RESOURCE_MESSAGE[NUM_TJS_INTERNAL_ERROR] );
 	TJSWarning.AssignMessage( RESOURCE_MESSAGE[NUM_TJS_WARNING] );

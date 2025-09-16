@@ -47,7 +47,7 @@ CUnknown * WINAPI TBufferRenderer::CreateInstance( LPUNKNOWN pUnk, HRESULT *phr 
 //----------------------------------------------------------------------------
 TBufferRenderer::TBufferRenderer( TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr )
  : CBaseVideoRenderer( CLSID_BufferRenderer, pName, pUnk, phr )
-, m_InputPin( this, &m_InterfaceLock, phr, TJS_W("Input") )
+, m_InputPin( this, &m_InterfaceLock, phr, L"Input" )
 , m_Allocator( this, NAME("Allocator"), GetOwner(), phr )
 {
 	//CBaseRender::m_pInputPinにポインタを設定する。

@@ -92,8 +92,11 @@ const TCHAR *DShowException::what( ) const
 //----------------------------------------------------------------------------
 void ThrowDShowException(const tjs_char *comment, HRESULT hr)
 {
-	TVPThrowExceptionMessage((ttstr(comment) + TJS_W(" : [0x") +
-		TJSInt32ToHex((tjs_uint32)hr) + TJS_W("] ") +
-		DShowException(hr).what()).c_str());
+	ttstr message = comment;
+	message += TJS_W(" : [0x");
+	message += TJSInt32ToHex((tjs_uint32)hr);
+	message += TJS_W("] ");
+	message += (const tjs_char*)DShowException(hr).what();	
+	TVPThrowExceptionMessage(message.c_str());
 }
 

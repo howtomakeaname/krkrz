@@ -325,7 +325,18 @@ void TVPLoadJPEG(void* formatdata, void *callbackdata, tTVPGraphicSizeCallback s
 		break;
 	}
 
-	if(mode == glmGrayscale) cinfo.out_color_space =  JCS_GRAYSCALE;
+	switch( mode ) {
+	case glmNormalRGBA:
+		cinfo.out_color_space =  JCS_EXT_RGBA;
+		break;
+	case glmGrayscale:
+		cinfo.out_color_space =  JCS_GRAYSCALE;
+		break;
+	case glmNormal:
+	default:
+		cinfo.out_color_space =  JCS_EXT_BGRA;
+		break;
+	}
 
 	// start decompression
 	jpeg_start_decompress(&cinfo);
@@ -378,10 +389,12 @@ void TVPLoadJPEG(void* formatdata, void *callbackdata, tTVPGraphicSizeCallback s
 					}
 					else
 					{
-						if(cinfo.out_color_space == JCS_RGB)
+						if(cinfo.out_color_space == JCS_EXT_RGBA || cinfo.out_color_space == JCS_EXT_BGRA)
 						{
+							// copy 32bits ARGB
 							memcpy(scanline,
-								buffer[bufline], cinfo.output_width*sizeof(tjs_uint32));
+								buffer[bufline],
+								cinfo.output_width * sizeof(tjs_uint32));
 						}
 						else
 						{
@@ -572,7 +585,11 @@ void TVPSaveAsJPG(void* formatdata, iTJSBinaryStream* dst, const tTVPBaseBitmap*
 		cinfo.image_width = width;
 		cinfo.image_height = height;
 		cinfo.input_components = 4;
+#ifdef TVP_USE_TURBO_JPEG_API
 		cinfo.in_color_space = JCS_EXT_BGRX;//JCS_RGB;
+#else
+		cinfo.in_color_space = JCS_RGB;
+#endif
 		cinfo.dct_method = opt.dct_method; //JDCT_ISLOW;
 		jpeg_set_defaults( &cinfo );
 		jpeg_set_quality( &cinfo, opt.quality, TRUE );

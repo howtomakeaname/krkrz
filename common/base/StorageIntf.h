@@ -14,6 +14,7 @@
 #include "tjsNative.h"
 #include "tjsHashSearch.h"
 #include <vector>
+#include <memory>
 
 //---------------------------------------------------------------------------
 // archive delimiter
@@ -159,7 +160,10 @@ void TVPPreNormalizeStorageName(ttstr &name);
 
 iTVPStorageMedia * TVPCreateFileMedia();
 	// create basic default "file:" storage media
-/*
+
+
+
+	/*
 extern void TVPPreNormalizeStorageName(ttstr &name);
 
 extern iTJSBinaryStream * TVPOpenStream(const ttstr & name, tjs_uint32 flags);
@@ -170,7 +174,6 @@ extern iTJSBinaryStream * TVPOpenStream(const ttstr & name, tjs_uint32 flags);
 extern bool TVPCheckExistentStorage(const ttstr &name);
 	// check file existence
 
-extern void TVPGetStorageListAt(const ttstr &name, std::vector<ttstr> & list);
 
 extern ttstr TVPGetMediaCurrent(const ttstr & name);
 extern void TVPSetMediaCurrent(const ttstr & name, const ttstr & dir);
@@ -193,11 +196,14 @@ bool TVPCreateFolders(const ttstr &folder);
 	// create folder along with the argument recursively (like mkdir -p).
 	// 'folder' must be a local native name.
 
+bool TVPMoveFile(const ttstr &oldname, const ttstr &newname);
+	// rename file ( "oldname" and "newname" are local *native* names )
+	// this must not throw an exception ( return false if error )
+
+extern void TVPGetStorageListAt(const ttstr &name, iTVPStorageLister *lister);
+	// list files at given place
+
 //---------------------------------------------------------------------------
-
-
-
-
 
 //---------------------------------------------------------------------------
 // implementation in this unit
@@ -268,9 +274,13 @@ extern tjs_uint TVPSegmentCacheLimit; // XP3 segment cache limit, in bytes.
 
 //---------------------------------------------------------------------------
 
+std::shared_ptr<uint8_t> TVPReadStream(const tjs_char *name, tjs_uint64 *flen=0);
+// read stream and return a buffer. the buffer is \0 terminated.
+	// if size is not null, the size of the buffer is returned to it.
 
-
-
+std::vector<std::string> *TVPReadLines(const tjs_char *name);
+// read lines from file and return a vector of string. the buffer is \0 terminated.
+	// if size is not null, the size of the buffer is returned to it.
 
 //---------------------------------------------------------------------------
 // tTJSNC_Storages : TJS Storages class
@@ -290,6 +300,10 @@ protected:
 extern tTJSNativeClass * TVPCreateNativeClass_Storages();
 //---------------------------------------------------------------------------
 
-
+// 指定の拡張子はファイルロード時にオンメモリにする
+void TVPAddCacheTargetExtension(const ttstr &ext);
+void TVPRemoveCacheTargetExtension(const ttstr &ext);
+bool TVPIsCacheTargetExtension(const ttstr &ext);
+void TVPClearCacheTargetExtensions();
 
 #endif

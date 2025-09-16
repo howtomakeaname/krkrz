@@ -577,7 +577,7 @@ static bool _TVPDeliverAllEvents()
 //---------------------------------------------------------------------------
 void TVPDeliverAllEvents()
 {
-	bool r;
+	bool r = false;
 
 	if(!TVPEventInterrupting)
 	{

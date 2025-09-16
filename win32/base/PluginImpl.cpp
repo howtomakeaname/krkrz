@@ -187,7 +187,7 @@ HRESULT __stdcall tTVPStorageProvider::GetStreamForRead(
 	iTJSBinaryStream *stream0;
 	try
 	{
-		stream0 = TVPCreateStream(url);
+		stream0 = TVPCreateStream((const tjs_char*)url);
 	}
 	catch(...)
 	{
@@ -278,7 +278,7 @@ tTVPPlugin::tTVPPlugin(const ttstr & name, ITSSStorageProvider *storageprovider)
 
 	// load DLL
 	Holder = new tTVPPluginHolder(name);
-	Instance = LoadLibrary(Holder->GetLocalName().AsStdString().c_str());
+	Instance = LoadLibrary((const wchar_t*)Holder->GetLocalName().AsStdString().c_str());
 	if(!Instance)
 	{
 		delete Holder;
@@ -343,12 +343,12 @@ tTVPPlugin::tTVPPlugin(const ttstr & name, ITSSStorageProvider *storageprovider)
 			unsigned long index = 0;
 			while(true)
 			{
-				tjs_char mediashortname[33];
-				tjs_char buf[256];
+				wchar_t mediashortname[33];
+				wchar_t buf[256];
 				HRESULT hr = TSSModule->GetSupportExts(index,
 					mediashortname, buf, 255);
 				if(hr == S_OK)
-					SupportedExts.push_back(ttstr(buf).AsLowerCase());
+					SupportedExts.push_back(ttstr((tjs_char*)buf).AsLowerCase());
 				else
 					break;
 				index ++;
@@ -511,7 +511,7 @@ static tjs_int TVPAutoLoadPluginCount = 0;
 static void TVPSearchPluginsAt(std::vector<tTVPFoundPlugin> &list, tjs_string folder)
 {
 	WIN32_FIND_DATA ffd;
-	HANDLE handle = ::FindFirstFile((folder + TJS_W("*.tpm")).c_str(), &ffd);
+	HANDLE handle = ::FindFirstFile((const wchar_t*)(folder + TJS_W("*.tpm")).c_str(), &ffd);
 	if(handle != INVALID_HANDLE_VALUE)
 	{
 		BOOL cont;
@@ -521,7 +521,7 @@ static void TVPSearchPluginsAt(std::vector<tTVPFoundPlugin> &list, tjs_string fo
 			{
 				tTVPFoundPlugin fp;
 				fp.Path = folder;
-				fp.Name = ffd.cFileName;
+				fp.Name = (const tjs_char*)ffd.cFileName;
 				list.push_back(fp);
 			}
 			cont = FindNextFile(handle, &ffd);
@@ -595,7 +595,7 @@ ITSSWaveDecoder * TVPSearchAvailTSSWaveDecoder(const ttstr & storage, const ttst
 			// retrieve instance from (*i)->TSSModule
 			IUnknown *intf = NULL;
 			HRESULT hr = (*i)->TSSModule->GetMediaInstance(
-				(tjs_char*)storage.c_str(), &intf);
+				(wchar_t*)storage.c_str(), &intf);
 			if(SUCCEEDED(hr))
 			{
 				try
@@ -890,10 +890,10 @@ bool TVPGetFileVersionOf(const tjs_char* module_filename, tjs_int &major, tjs_in
 	UINT dum;
 	DWORD dum2;
 
-	tjs_char* filename = new tjs_char[TJS_strlen(module_filename) + 1];
+	wchar_t* filename = new wchar_t[TJS_strlen(module_filename) + 1];
 	try
 	{
-		TJS_strcpy(filename, module_filename);
+		TJS_strcpy((tjs_char*)filename, module_filename);
 
 		DWORD size = ::GetFileVersionInfoSize (filename, &dum2);
 		if(size)
@@ -903,7 +903,7 @@ bool TVPGetFileVersionOf(const tjs_char* module_filename, tjs_int &major, tjs_in
 			{
 				if(::GetFileVersionInfo(filename, 0, size, (void*)VersionInfo))
 				{
-					if(::VerQueryValue((void*)VersionInfo, TJS_W("\\"), (void**)(&FixedFileInfo),
+					if(::VerQueryValue((void*)VersionInfo, L"\\", (void**)(&FixedFileInfo),
 						&dum))
 					{
 						major   = FixedFileInfo->dwFileVersionMS >> 16;

@@ -2,6 +2,6 @@
 #include "tjsCommHead.h"
 #include "Application.h"
 
-tTJSNativeClass* TVPCreateDefaultDrawDevice() {
-	return Application->CreateDrawDevice();
+tTJSNativeClass* TVPGetDefaultDrawDevice() {
+	return Application->GetDefaultDrawDevice();
 }

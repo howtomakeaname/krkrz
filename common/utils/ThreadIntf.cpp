@@ -200,7 +200,7 @@ void DrawThread::Execute() {
 }
 //---------------------------------------------------------------------------
 void DrawThreadPool::PoolThread( tjs_int taskNum ) {
-	tjs_int extraThreadNum = TVPGetThreadNum() - 1;
+	tjs_int extraThreadNum = TVPGetThreadNum();
 
 
 	// スレッド数がextraThreadNumに達していないので(suspend状態で)生成する

@@ -25,7 +25,7 @@
 
 #include "Application.h"
 //#include "CompatibleNativeFuncs.h"
-#include "DebugIntf.h"
+#include "LogIntf.h"
 #include "CharacterSet.h"
 
 #if !defined(_WIN32)
@@ -65,8 +65,8 @@ bool TVPGetAsyncKeyState(tjs_uint keycode, bool getcurrent)
 	//}
 
 	bool ret = Application->GetAsyncKeyState(keycode, getcurrent);
-	//Application->DPRINTF(TJS_W("keystate:%02x ret:%d"), keycode, ret?1:0);
-
+	//int result = ret ? 1 : 0;
+	//TVPLOG_DEBUG("keystate:{:08x} ret:{}", keycode, result);
 	return ret;
 }
 //---------------------------------------------------------------------------
@@ -119,10 +119,15 @@ bool TVPShellExecute(const ttstr &target, const ttstr &param)
 //---------------------------------------------------------------------------
 // TVPCreateAppLock
 //---------------------------------------------------------------------------
+extern int GetSystemSecurityOption(const char *name);
 bool TVPCreateAppLock(const ttstr &lockname)
 {
-	// XXX 要実装
-	return true;
+	// [CUSTOM-MODIFIED] System.createAppLock(...) always return true security-option
+	static const int nolock = GetSystemSecurityOption("disableapplock");
+	if (nolock > 0) return true;
+
+	// lock application using mutex
+	return Application->CreateAppLock(lockname.AsStdString());
 }
 //---------------------------------------------------------------------------
 

@@ -146,7 +146,7 @@ void TVPStartObjectHashMapLog(void)
 		si.wShowWindow = SW_SHOWNORMAL;
 
 		tjs_char szFull[_MAX_PATH];
-		::GetModuleFileName(NULL, szFull, sizeof(szFull) / sizeof(tjs_char));
+		::GetModuleFileName(NULL, (wchar_t*)szFull, sizeof(szFull) / sizeof(tjs_char));
 		tjs_string exepath(szFull);
 		BOOL ret =
 			::CreateProcess(

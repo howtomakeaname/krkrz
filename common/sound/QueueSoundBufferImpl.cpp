@@ -46,62 +46,10 @@ void TVPQueueSoundSetGlobalFocusMode(tTVPSoundGlobalFocusMode b) {
 tTVPSoundGlobalFocusMode TVPQueueSoundGetGlobalFocusMode() {
     return tTJSNI_QueueSoundBuffer::GetGlobalFocusMode();
 }
+
 //---------------------------------------------------------------------------
-// Options management
-//---------------------------------------------------------------------------
-static bool TVPSoundOptionsInit = false;
-
-static tTVPSoundGlobalFocusMode TVPSoundGlobalFocusModeByOption = sgfmNeverMute;
-static tjs_int TVPSoundGlobalFocusMuteVolume = 0;
-static tjs_int TVPSoundFrequency = 48000;
-static tjs_int TVPSoundChannels = 2;
-//---------------------------------------------------------------------------
-static void TVPInitSoundOptions()
-{
-	if( TVPSoundOptionsInit) return;
-
-	tTJSVariant val;
-	if(TVPGetCommandLine(TJS_W("-wsfreq"), &val)) {
-		TVPSoundFrequency = val;
-	}
-
-	TVPSoundOptionsInit = true;
-}
-//---------------------------------------------------------------------------
-static iTVPAudioDevice* TVPAudioDevice = nullptr;
-static void TVPInitAudioDevice()
-{
-	TVPInitSoundOptions();
-
-	if( TVPAudioDevice ) return;
-
-	TVPAudioDevice = TVPCreateAudioDevice();
-
-	tTVPAudioInitParam param;
-	param.Channels = TVPSoundChannels;
-	param.SampleRate = TVPSoundFrequency;
-	TVPAudioDevice->Initialize( param );
-}
-//---------------------------------------------------------------------------
-static void TVPUninitAudioDevice()
-{
-	if( TVPAudioDevice ) {
-		TVPAudioDevice->Uninitialize();
-		delete TVPAudioDevice;
-		TVPAudioDevice = nullptr;
-	}
-}
-static tTVPAtExit TVPUninitAudioDeviceAtExit
-( TVP_ATEXIT_PRI_RELEASE, TVPUninitAudioDevice );
 //---------------------------------------------------------------------------
 
-iTVPAudioStream* TVPCreateAudioStream(tTVPAudioStreamParam &param) 
-{
-	if( TVPAudioDevice ) {
-		return TVPAudioDevice->CreateAudioStream(param);
-	}
-	return nullptr;
-}
 
 //---------------------------------------------------------------------------
 // Buffer management
@@ -124,8 +72,31 @@ static tTVPAtExit TVPShutdownWaveSoundBuffersAtExit( TVP_ATEXIT_PRI_PREPARE, TVP
 extern void TVPRegisterTSSWaveDecoderCreator();
 #endif
 
+// miniaudio.cpp
+extern tjs_int TVPSoundFrequency;
+
+tTVPSoundGlobalFocusMode TVPSoundGlobalFocusModeByOption = sgfmNeverMute;
+tjs_int TVPSoundGlobalFocusMuteVolume = 0;
 tjs_int tTJSNI_QueueSoundBuffer::GlobalVolume = 100000;
 tTVPSoundGlobalFocusMode tTJSNI_QueueSoundBuffer::GlobalFocusMode = sgfmNeverMute;
+
+//---------------------------------------------------------------------------
+// Options management
+//---------------------------------------------------------------------------
+static bool TVPSoundOptionsInit = false;
+
+void TVPInitSoundOptions()
+{
+	if (TVPSoundOptionsInit) return;
+
+	tTJSVariant val;
+	if(TVPGetCommandLine(TJS_W("-wsfreq"), &val)) {
+		TVPSoundFrequency = val;
+	}
+
+	TVPSoundOptionsInit = true;
+}
+
 //---------------------------------------------------------------------------
 tTJSNI_QueueSoundBuffer::tTJSNI_QueueSoundBuffer() : Player(this)
 {
@@ -285,10 +256,7 @@ void tTJSNI_QueueSoundBuffer::Update() {
 //---------------------------------------------------------------------------
 void tTJSNI_QueueSoundBuffer::CreateSoundBuffer() {
 	// ensure Audio Device object
-	TVPInitAudioDevice();
-	if( TVPAudioDevice == nullptr ) {
-		TVPThrowExceptionMessage(TJS_W("Uninitialize audio device."));
-	}
+	TVPInitSoundOptions();
 
 	if( !Player.IsSameFormat( InputFormat ) ) {
 		for( tjs_uint i = 0; i < BufferCount; i++ ) {
@@ -297,9 +265,8 @@ void tTJSNI_QueueSoundBuffer::CreateSoundBuffer() {
 			}
 			Buffer[i]->Create( &InputFormat, UseVisBuffer );
 		}
-		//Player.CreateStream( TVPAudioDevice, InputFormat, Buffer[0]->GetSamplesCount() );
 	}
-	Player.CreateStream( TVPAudioDevice, InputFormat, Buffer[0]->GetSamplesCount() );
+	Player.CreateStream( InputFormat, Buffer[0]->GetSamplesCount() );
 
 	// reset volume, sound position and frequency
 	SetVolumeToStream();

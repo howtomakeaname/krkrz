@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <memory>
 #include <set>
 #include "StorageIntf.h"
 #include "tjsUtils.h"
@@ -27,6 +26,7 @@
 #include "tjsDictionary.h"
 #include "Application.h"
 #include "StorageCache.h"
+#include "LogIntf.h"
 
 #define TVP_DEFAULT_ARCHIVE_CACHE_NUM 64
 #define TVP_DEFAULT_AUTOPATH_CACHE_NUM 256
@@ -75,6 +75,78 @@ static tTJSCriticalSection TVPCreateStreamCS;
 
 
 
+//---------------------------------------------------------------------------
+// cache対象拡張子
+//---------------------------------------------------------------------------
+
+static std::set<ttstr> TVPCacheTargetExtensions;
+static tTJSCriticalSection TVPCacheTargetExtensionsCS;
+
+//---------------------------------------------------------------------------
+void TVPAddCacheTargetExtension(const ttstr &ext)
+{	
+	ttstr normalized_ext = ext;
+	if(!normalized_ext.IsEmpty() && normalized_ext[0] != TJS_W('.'))
+	{
+		normalized_ext = TJS_W(".") + normalized_ext;
+	}
+	
+	// make extension lowercase for case-insensitive comparison
+	tjs_char *p = normalized_ext.Independ();
+	while(*p)
+	{
+		if(*p >= TJS_W('A') && *p <= TJS_W('Z'))
+			*p += TJS_W('a') - TJS_W('A');
+		p++;
+	}
+	
+	TVPCacheTargetExtensions.insert(normalized_ext);
+}
+//---------------------------------------------------------------------------
+void TVPRemoveCacheTargetExtension(const ttstr &ext)
+{	
+	ttstr normalized_ext = ext;
+	if(!normalized_ext.IsEmpty() && normalized_ext[0] != TJS_W('.'))
+	{
+		normalized_ext = TJS_W(".") + normalized_ext;
+	}
+	
+	// make extension lowercase for case-insensitive comparison
+	tjs_char *p = normalized_ext.Independ();
+	while(*p)
+	{
+		if(*p >= TJS_W('A') && *p <= TJS_W('Z'))
+			*p += TJS_W('a') - TJS_W('A');
+		p++;
+	}
+	
+	TVPCacheTargetExtensions.erase(normalized_ext);
+}
+//---------------------------------------------------------------------------
+bool TVPIsCacheTargetExtension(const ttstr &ext)
+{	
+	ttstr normalized_ext = ext;
+	if(!normalized_ext.IsEmpty() && normalized_ext[0] != TJS_W('.'))
+	{
+		normalized_ext = TJS_W(".") + normalized_ext;
+	}
+	
+	// make extension lowercase for case-insensitive comparison
+	tjs_char *p = normalized_ext.Independ();
+	while(*p)
+	{
+		if(*p >= TJS_W('A') && *p <= TJS_W('Z'))
+			*p += TJS_W('a') - TJS_W('A');
+		p++;
+	}
+	
+	return TVPCacheTargetExtensions.find(normalized_ext) != TVPCacheTargetExtensions.end();
+}
+//---------------------------------------------------------------------------
+void TVPClearCacheTargetExtensions()
+{
+	TVPCacheTargetExtensions.clear();
+}
 
 
 //---------------------------------------------------------------------------
@@ -616,8 +688,10 @@ ttstr TVPGetLocallyAccessibleName(const ttstr &name)
 //---------------------------------------------------------------------------
 
 
-
-
+void TVPGetStorageListAt(const ttstr &name, iTVPStorageLister *lister)
+{
+	TVPStorageMediaManager.GetListAt(name, lister);
+}
 
 //---------------------------------------------------------------------------
 // tTVPArchive
@@ -1409,32 +1483,11 @@ iTJSDispatch2* TVPGetFilePropertyNoAddRef( const ttstr& name )
 	return nullptr;
 }
 
-
-//---------------------------------------------------------------------------
-// TVPCreateStream
-//---------------------------------------------------------------------------
-static iTJSBinaryStream * _TVPCreateStream(const ttstr & _name, tjs_uint32 flags)
+// 内部呼び出し用
+// name は正規化済み
+iTJSBinaryStream * _InnerTVPCreateStream(const ttstr &name, tjs_uint32 flags)
 {
-	tTJSCriticalSectionHolder cs_holder(TVPCreateStreamCS);
-
 	tjs_uint32 access = flags & TJS_BS_ACCESS_MASK;
-
-	ttstr name;
-
-	if(access == TJS_BS_WRITE)
-		name = TVPNormalizeStorageName(_name);
-	else
-		name = TVPGetPlacedPath(_name); // file must exist
-
-	if(name.IsEmpty()) TVPThrowExceptionMessage(TVPCannotOpenStorage, _name);
-
-	if (access == TJS_BS_READ) {
-		iTJSBinaryStream *stream = TVPGetStorageCache(name);
-		if (stream) {
-			return stream;
-		}
-		TVPClearStorageCache(name);
-	}
 
 	// does name contain > ?
 	const tjs_char * sharp_pos = TJS_strchr(name.c_str(), TVPArchiveDelimiter);
@@ -1501,6 +1554,39 @@ static iTJSBinaryStream * _TVPCreateStream(const ttstr & _name, tjs_uint32 flags
 	return stream;
 }
 
+//---------------------------------------------------------------------------
+// TVPCreateStream
+//---------------------------------------------------------------------------
+static iTJSBinaryStream * _TVPCreateStream(const ttstr & _name, tjs_uint32 flags)
+{
+	tTJSCriticalSectionHolder cs_holder(TVPCreateStreamCS);
+
+	tjs_uint32 access = flags & TJS_BS_ACCESS_MASK;
+
+	ttstr name;
+
+	if(access == TJS_BS_WRITE)
+		name = TVPNormalizeStorageName(_name);
+	else
+		name = TVPGetPlacedPath(_name); // file must exist
+
+	if(name.IsEmpty()) TVPThrowExceptionMessage(TVPCannotOpenStorage, _name);
+
+	if (access == TJS_BS_READ) {
+		// 拡張子を切り出す
+		ttstr ext = TVPExtractStorageExt(name);
+
+		TVPLOG_DEBUG("_TVPCreateStream: {} ext:{}", name, ext);
+		iTJSBinaryStream *stream = TVPGetStorageCache(name, TVPIsCacheTargetExtension(ext));
+		if (stream) {
+			return stream;
+		}
+		TVPClearStorageCache(name);
+	}
+
+	return _InnerTVPCreateStream(name, flags);
+}
+
 iTJSBinaryStream * TVPCreateStream(const ttstr & _name, tjs_uint32 flags)
 {
 	try
@@ -1539,8 +1625,74 @@ iTJSBinaryStream * TVPCreateStream(const ttstr & _name, tjs_uint32 flags)
 }
 //---------------------------------------------------------------------------
 
+std::shared_ptr<uint8_t> TVPReadStream(const tjs_char *name, tjs_uint64 *flen)
+{
+	std::unique_ptr<iTJSBinaryStream> stream(::TVPCreateStream(name, TJS_BS_READ));
+	if (stream) {
+		size_t size = stream->GetSize();
+		if (size > 0) {
+			uint8_t* data = new uint8_t[size + 2];
+			size_t s = size;
+			uint8_t *p = data;
+			while (s > 0) {
+				size_t read = stream->Read(p, s);
+				if (read == 0) {
+					break;
+				}
+				s -= read;
+				p += read;
+			}
+			// 文字列として参照できるように末尾に0設定しておく
+			data[size] = '\0';
+			data[size+1] = '\0';
+			// 正規のサイズを返す
+			if (flen) {
+				*flen = size;
+			}
+			return std::shared_ptr<uint8_t>(data, std::default_delete<uint8_t[]>());
+		}
+	}
+    return 0;
+}
 
+static std::vector<std::string>* 
+ReadLinesFromString(const char *str)
+{
+	if (str) {
+		std::vector<std::string>* ret = new std::vector<std::string>();
+		if (ret) {
+			std::istringstream istr(str);	
+			std::string line;
+			while (std::getline(istr, line)){
+				ret->push_back(line);
+			}
+			return ret;
+		}
+	}
+	return nullptr;
+}
 
+std::vector<std::string> *TVPReadLines(const tjs_char *name)
+{
+	if (TVPIsExistentStorage(name)) {
+		std::unique_ptr<iTJSBinaryStream> stream(::TVPCreateStream(name, TJS_BS_READ));
+		if (stream) {
+			size_t size = stream->GetSize();
+			if (size > 0) {
+				std::unique_ptr<char[]> tmp(new char[size+2]);
+				char *ptr = tmp.get();
+				if (ptr) {
+					stream->Read(ptr, size);
+					// 文字列として参照できるように末尾に0設定しておく
+					ptr[size] = '\0';
+					ptr[size+1] = '\0';
+					return ReadLinesFromString(ptr);
+				}
+			}
+		}
+	}
+	return 0;
+}
 
 
 //---------------------------------------------------------------------------
@@ -1718,6 +1870,15 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/getFileProperty) {
 	return TJS_S_OK;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/getFileProperty )
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/addCacheTargetExtension) {
+	if( numparams < 1 ) return TJS_E_BADPARAMCOUNT;
+	ttstr ext = *param[0];
+	if( ext.IsEmpty() ) return TJS_E_INVALIDPARAM;
+	TVPAddCacheTargetExtension(ext);
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/addCacheTargetExtension )
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/requestCache) {
 	if( numparams < 1 ) return TJS_E_BADPARAMCOUNT;

@@ -8,10 +8,10 @@
 class ApplicationSpecialPath {
 public:
 	static tjs_string GetSpecialFolderPath(int csidl) {
-		tjs_char path[MAX_PATH+1];
+		wchar_t path[MAX_PATH+1];
 		if(!SHGetSpecialFolderPath(NULL, path, csidl, false))
 			return tjs_string();
-		return tjs_string(path);
+		return tjs_string((tjs_char*)path);
 	}
 	static inline tjs_string GetPersonalPath() {
 		tjs_string path = GetSpecialFolderPath(CSIDL_PERSONAL);
@@ -34,7 +34,7 @@ public:
 		PWSTR ppszPath = NULL;
 		HRESULT hr = ::SHGetKnownFolderPath(FOLDERID_SavedGames, 0, NULL, &ppszPath);
 		if( hr == S_OK ) {
-			result = tjs_string( ppszPath );
+			result = tjs_string( (tjs_char*)ppszPath );
 			::CoTaskMemFree( ppszPath );
 		}
 		return result;

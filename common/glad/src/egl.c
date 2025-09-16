@@ -1,3 +1,6 @@
+/**
+ * SPDX-License-Identifier: (WTFPL OR CC0-1.0) AND Apache-2.0
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +40,7 @@ int GLAD_EGL_ANDROID_image_native_buffer = 0;
 int GLAD_EGL_ANDROID_native_fence_sync = 0;
 int GLAD_EGL_ANDROID_presentation_time = 0;
 int GLAD_EGL_ANDROID_recordable = 0;
+int GLAD_EGL_ANDROID_telemetry_hint = 0;
 int GLAD_EGL_ANGLE_d3d_share_handle_client_buffer = 0;
 int GLAD_EGL_ANGLE_device_d3d = 0;
 int GLAD_EGL_ANGLE_query_surface_pointer = 0;
@@ -51,6 +55,7 @@ int GLAD_EGL_EXT_buffer_age = 0;
 int GLAD_EGL_EXT_client_extensions = 0;
 int GLAD_EGL_EXT_client_sync = 0;
 int GLAD_EGL_EXT_compositor = 0;
+int GLAD_EGL_EXT_config_select_group = 0;
 int GLAD_EGL_EXT_create_context_robustness = 0;
 int GLAD_EGL_EXT_device_base = 0;
 int GLAD_EGL_EXT_device_drm = 0;
@@ -60,6 +65,9 @@ int GLAD_EGL_EXT_device_openwf = 0;
 int GLAD_EGL_EXT_device_persistent_id = 0;
 int GLAD_EGL_EXT_device_query = 0;
 int GLAD_EGL_EXT_device_query_name = 0;
+int GLAD_EGL_EXT_display_alloc = 0;
+int GLAD_EGL_EXT_explicit_device = 0;
+int GLAD_EGL_EXT_gl_colorspace_bt2020_hlg = 0;
 int GLAD_EGL_EXT_gl_colorspace_bt2020_linear = 0;
 int GLAD_EGL_EXT_gl_colorspace_bt2020_pq = 0;
 int GLAD_EGL_EXT_gl_colorspace_display_p3 = 0;
@@ -81,11 +89,14 @@ int GLAD_EGL_EXT_platform_device = 0;
 int GLAD_EGL_EXT_platform_wayland = 0;
 int GLAD_EGL_EXT_platform_x11 = 0;
 int GLAD_EGL_EXT_platform_xcb = 0;
+int GLAD_EGL_EXT_present_opaque = 0;
 int GLAD_EGL_EXT_protected_content = 0;
 int GLAD_EGL_EXT_protected_surface = 0;
+int GLAD_EGL_EXT_query_reset_notification_strategy = 0;
 int GLAD_EGL_EXT_stream_consumer_egloutput = 0;
 int GLAD_EGL_EXT_surface_CTA861_3_metadata = 0;
 int GLAD_EGL_EXT_surface_SMPTE2086_metadata = 0;
+int GLAD_EGL_EXT_surface_compression = 0;
 int GLAD_EGL_EXT_swap_buffers_with_damage = 0;
 int GLAD_EGL_EXT_sync_reuse = 0;
 int GLAD_EGL_EXT_yuv_surface = 0;
@@ -155,6 +166,7 @@ int GLAD_EGL_NV_post_sub_buffer = 0;
 int GLAD_EGL_NV_quadruple_buffer = 0;
 int GLAD_EGL_NV_robustness_video_memory_purge = 0;
 int GLAD_EGL_NV_stream_consumer_eglimage = 0;
+int GLAD_EGL_NV_stream_consumer_eglimage_use_scanout_attrib = 0;
 int GLAD_EGL_NV_stream_consumer_gltexture_yuv = 0;
 int GLAD_EGL_NV_stream_cross_display = 0;
 int GLAD_EGL_NV_stream_cross_object = 0;
@@ -177,6 +189,8 @@ int GLAD_EGL_NV_stream_sync = 0;
 int GLAD_EGL_NV_sync = 0;
 int GLAD_EGL_NV_system_time = 0;
 int GLAD_EGL_NV_triple_buffer = 0;
+int GLAD_EGL_QNX_image_native_buffer = 0;
+int GLAD_EGL_QNX_platform_screen = 0;
 int GLAD_EGL_TIZEN_image_native_buffer = 0;
 int GLAD_EGL_TIZEN_image_native_surface = 0;
 int GLAD_EGL_WL_bind_wayland_display = 0;
@@ -226,6 +240,7 @@ PFNEGLCREATEWAYLANDBUFFERFROMIMAGEWLPROC glad_eglCreateWaylandBufferFromImageWL 
 PFNEGLCREATEWINDOWSURFACEPROC glad_eglCreateWindowSurface = NULL;
 PFNEGLDEBUGMESSAGECONTROLKHRPROC glad_eglDebugMessageControlKHR = NULL;
 PFNEGLDESTROYCONTEXTPROC glad_eglDestroyContext = NULL;
+PFNEGLDESTROYDISPLAYEXTPROC glad_eglDestroyDisplayEXT = NULL;
 PFNEGLDESTROYIMAGEPROC glad_eglDestroyImage = NULL;
 PFNEGLDESTROYIMAGEKHRPROC glad_eglDestroyImageKHR = NULL;
 PFNEGLDESTROYSTREAMKHRPROC glad_eglDestroyStreamKHR = NULL;
@@ -299,6 +314,7 @@ PFNEGLQUERYSTREAMMETADATANVPROC glad_eglQueryStreamMetadataNV = NULL;
 PFNEGLQUERYSTREAMTIMEKHRPROC glad_eglQueryStreamTimeKHR = NULL;
 PFNEGLQUERYSTREAMU64KHRPROC glad_eglQueryStreamu64KHR = NULL;
 PFNEGLQUERYSTRINGPROC glad_eglQueryString = NULL;
+PFNEGLQUERYSUPPORTEDCOMPRESSIONRATESEXTPROC glad_eglQuerySupportedCompressionRatesEXT = NULL;
 PFNEGLQUERYSURFACEPROC glad_eglQuerySurface = NULL;
 PFNEGLQUERYSURFACE64KHRPROC glad_eglQuerySurface64KHR = NULL;
 PFNEGLQUERYSURFACEPOINTERANGLEPROC glad_eglQuerySurfacePointerANGLE = NULL;
@@ -472,6 +488,10 @@ static void glad_egl_load_EGL_EXT_device_query( GLADuserptrloadfunc load, void* 
     glad_eglQueryDeviceStringEXT = (PFNEGLQUERYDEVICESTRINGEXTPROC) load(userptr, "eglQueryDeviceStringEXT");
     glad_eglQueryDisplayAttribEXT = (PFNEGLQUERYDISPLAYATTRIBEXTPROC) load(userptr, "eglQueryDisplayAttribEXT");
 }
+static void glad_egl_load_EGL_EXT_display_alloc( GLADuserptrloadfunc load, void* userptr) {
+    if(!GLAD_EGL_EXT_display_alloc) return;
+    glad_eglDestroyDisplayEXT = (PFNEGLDESTROYDISPLAYEXTPROC) load(userptr, "eglDestroyDisplayEXT");
+}
 static void glad_egl_load_EGL_EXT_image_dma_buf_import_modifiers( GLADuserptrloadfunc load, void* userptr) {
     if(!GLAD_EGL_EXT_image_dma_buf_import_modifiers) return;
     glad_eglQueryDmaBufFormatsEXT = (PFNEGLQUERYDMABUFFORMATSEXTPROC) load(userptr, "eglQueryDmaBufFormatsEXT");
@@ -497,6 +517,10 @@ static void glad_egl_load_EGL_EXT_platform_base( GLADuserptrloadfunc load, void*
 static void glad_egl_load_EGL_EXT_stream_consumer_egloutput( GLADuserptrloadfunc load, void* userptr) {
     if(!GLAD_EGL_EXT_stream_consumer_egloutput) return;
     glad_eglStreamConsumerOutputEXT = (PFNEGLSTREAMCONSUMEROUTPUTEXTPROC) load(userptr, "eglStreamConsumerOutputEXT");
+}
+static void glad_egl_load_EGL_EXT_surface_compression( GLADuserptrloadfunc load, void* userptr) {
+    if(!GLAD_EGL_EXT_surface_compression) return;
+    glad_eglQuerySupportedCompressionRatesEXT = (PFNEGLQUERYSUPPORTEDCOMPRESSIONRATESEXTPROC) load(userptr, "eglQuerySupportedCompressionRatesEXT");
 }
 static void glad_egl_load_EGL_EXT_swap_buffers_with_damage( GLADuserptrloadfunc load, void* userptr) {
     if(!GLAD_EGL_EXT_swap_buffers_with_damage) return;
@@ -741,6 +765,7 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_ANDROID_native_fence_sync = glad_egl_has_extension(extensions, "EGL_ANDROID_native_fence_sync");
     GLAD_EGL_ANDROID_presentation_time = glad_egl_has_extension(extensions, "EGL_ANDROID_presentation_time");
     GLAD_EGL_ANDROID_recordable = glad_egl_has_extension(extensions, "EGL_ANDROID_recordable");
+    GLAD_EGL_ANDROID_telemetry_hint = glad_egl_has_extension(extensions, "EGL_ANDROID_telemetry_hint");
     GLAD_EGL_ANGLE_d3d_share_handle_client_buffer = glad_egl_has_extension(extensions, "EGL_ANGLE_d3d_share_handle_client_buffer");
     GLAD_EGL_ANGLE_device_d3d = glad_egl_has_extension(extensions, "EGL_ANGLE_device_d3d");
     GLAD_EGL_ANGLE_query_surface_pointer = glad_egl_has_extension(extensions, "EGL_ANGLE_query_surface_pointer");
@@ -755,6 +780,7 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_EXT_client_extensions = glad_egl_has_extension(extensions, "EGL_EXT_client_extensions");
     GLAD_EGL_EXT_client_sync = glad_egl_has_extension(extensions, "EGL_EXT_client_sync");
     GLAD_EGL_EXT_compositor = glad_egl_has_extension(extensions, "EGL_EXT_compositor");
+    GLAD_EGL_EXT_config_select_group = glad_egl_has_extension(extensions, "EGL_EXT_config_select_group");
     GLAD_EGL_EXT_create_context_robustness = glad_egl_has_extension(extensions, "EGL_EXT_create_context_robustness");
     GLAD_EGL_EXT_device_base = glad_egl_has_extension(extensions, "EGL_EXT_device_base");
     GLAD_EGL_EXT_device_drm = glad_egl_has_extension(extensions, "EGL_EXT_device_drm");
@@ -764,6 +790,9 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_EXT_device_persistent_id = glad_egl_has_extension(extensions, "EGL_EXT_device_persistent_id");
     GLAD_EGL_EXT_device_query = glad_egl_has_extension(extensions, "EGL_EXT_device_query");
     GLAD_EGL_EXT_device_query_name = glad_egl_has_extension(extensions, "EGL_EXT_device_query_name");
+    GLAD_EGL_EXT_display_alloc = glad_egl_has_extension(extensions, "EGL_EXT_display_alloc");
+    GLAD_EGL_EXT_explicit_device = glad_egl_has_extension(extensions, "EGL_EXT_explicit_device");
+    GLAD_EGL_EXT_gl_colorspace_bt2020_hlg = glad_egl_has_extension(extensions, "EGL_EXT_gl_colorspace_bt2020_hlg");
     GLAD_EGL_EXT_gl_colorspace_bt2020_linear = glad_egl_has_extension(extensions, "EGL_EXT_gl_colorspace_bt2020_linear");
     GLAD_EGL_EXT_gl_colorspace_bt2020_pq = glad_egl_has_extension(extensions, "EGL_EXT_gl_colorspace_bt2020_pq");
     GLAD_EGL_EXT_gl_colorspace_display_p3 = glad_egl_has_extension(extensions, "EGL_EXT_gl_colorspace_display_p3");
@@ -785,11 +814,14 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_EXT_platform_wayland = glad_egl_has_extension(extensions, "EGL_EXT_platform_wayland");
     GLAD_EGL_EXT_platform_x11 = glad_egl_has_extension(extensions, "EGL_EXT_platform_x11");
     GLAD_EGL_EXT_platform_xcb = glad_egl_has_extension(extensions, "EGL_EXT_platform_xcb");
+    GLAD_EGL_EXT_present_opaque = glad_egl_has_extension(extensions, "EGL_EXT_present_opaque");
     GLAD_EGL_EXT_protected_content = glad_egl_has_extension(extensions, "EGL_EXT_protected_content");
     GLAD_EGL_EXT_protected_surface = glad_egl_has_extension(extensions, "EGL_EXT_protected_surface");
+    GLAD_EGL_EXT_query_reset_notification_strategy = glad_egl_has_extension(extensions, "EGL_EXT_query_reset_notification_strategy");
     GLAD_EGL_EXT_stream_consumer_egloutput = glad_egl_has_extension(extensions, "EGL_EXT_stream_consumer_egloutput");
     GLAD_EGL_EXT_surface_CTA861_3_metadata = glad_egl_has_extension(extensions, "EGL_EXT_surface_CTA861_3_metadata");
     GLAD_EGL_EXT_surface_SMPTE2086_metadata = glad_egl_has_extension(extensions, "EGL_EXT_surface_SMPTE2086_metadata");
+    GLAD_EGL_EXT_surface_compression = glad_egl_has_extension(extensions, "EGL_EXT_surface_compression");
     GLAD_EGL_EXT_swap_buffers_with_damage = glad_egl_has_extension(extensions, "EGL_EXT_swap_buffers_with_damage");
     GLAD_EGL_EXT_sync_reuse = glad_egl_has_extension(extensions, "EGL_EXT_sync_reuse");
     GLAD_EGL_EXT_yuv_surface = glad_egl_has_extension(extensions, "EGL_EXT_yuv_surface");
@@ -859,6 +891,7 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_NV_quadruple_buffer = glad_egl_has_extension(extensions, "EGL_NV_quadruple_buffer");
     GLAD_EGL_NV_robustness_video_memory_purge = glad_egl_has_extension(extensions, "EGL_NV_robustness_video_memory_purge");
     GLAD_EGL_NV_stream_consumer_eglimage = glad_egl_has_extension(extensions, "EGL_NV_stream_consumer_eglimage");
+    GLAD_EGL_NV_stream_consumer_eglimage_use_scanout_attrib = glad_egl_has_extension(extensions, "EGL_NV_stream_consumer_eglimage_use_scanout_attrib");
     GLAD_EGL_NV_stream_consumer_gltexture_yuv = glad_egl_has_extension(extensions, "EGL_NV_stream_consumer_gltexture_yuv");
     GLAD_EGL_NV_stream_cross_display = glad_egl_has_extension(extensions, "EGL_NV_stream_cross_display");
     GLAD_EGL_NV_stream_cross_object = glad_egl_has_extension(extensions, "EGL_NV_stream_cross_object");
@@ -881,6 +914,8 @@ static int glad_egl_find_extensions_egl(EGLDisplay display) {
     GLAD_EGL_NV_sync = glad_egl_has_extension(extensions, "EGL_NV_sync");
     GLAD_EGL_NV_system_time = glad_egl_has_extension(extensions, "EGL_NV_system_time");
     GLAD_EGL_NV_triple_buffer = glad_egl_has_extension(extensions, "EGL_NV_triple_buffer");
+    GLAD_EGL_QNX_image_native_buffer = glad_egl_has_extension(extensions, "EGL_QNX_image_native_buffer");
+    GLAD_EGL_QNX_platform_screen = glad_egl_has_extension(extensions, "EGL_QNX_platform_screen");
     GLAD_EGL_TIZEN_image_native_buffer = glad_egl_has_extension(extensions, "EGL_TIZEN_image_native_buffer");
     GLAD_EGL_TIZEN_image_native_surface = glad_egl_has_extension(extensions, "EGL_TIZEN_image_native_surface");
     GLAD_EGL_WL_bind_wayland_display = glad_egl_has_extension(extensions, "EGL_WL_bind_wayland_display");
@@ -961,10 +996,12 @@ int gladLoadEGLUserPtr(EGLDisplay display, GLADuserptrloadfunc load, void* userp
     glad_egl_load_EGL_EXT_device_enumeration(load, userptr);
     glad_egl_load_EGL_EXT_device_persistent_id(load, userptr);
     glad_egl_load_EGL_EXT_device_query(load, userptr);
+    glad_egl_load_EGL_EXT_display_alloc(load, userptr);
     glad_egl_load_EGL_EXT_image_dma_buf_import_modifiers(load, userptr);
     glad_egl_load_EGL_EXT_output_base(load, userptr);
     glad_egl_load_EGL_EXT_platform_base(load, userptr);
     glad_egl_load_EGL_EXT_stream_consumer_egloutput(load, userptr);
+    glad_egl_load_EGL_EXT_surface_compression(load, userptr);
     glad_egl_load_EGL_EXT_swap_buffers_with_damage(load, userptr);
     glad_egl_load_EGL_EXT_sync_reuse(load, userptr);
     glad_egl_load_EGL_HI_clientpixmap(load, userptr);
@@ -1003,6 +1040,7 @@ int gladLoadEGLUserPtr(EGLDisplay display, GLADuserptrloadfunc load, void* userp
     glad_egl_load_EGL_NV_system_time(load, userptr);
     glad_egl_load_EGL_WL_bind_wayland_display(load, userptr);
     glad_egl_load_EGL_WL_create_wayland_buffer_from_image(load, userptr);
+
 
     return version;
 }
@@ -1148,7 +1186,7 @@ int gladLoaderLoadEGL(EGLDisplay display) {
 }
 
 
-void gladLoaderUnloadEGL() {
+void gladLoaderUnloadEGL(void) {
     if (_egl_handle != NULL) {
         glad_close_dlopen_handle(_egl_handle);
         _egl_handle = NULL;

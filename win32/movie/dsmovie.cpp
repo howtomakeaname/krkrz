@@ -1115,11 +1115,11 @@ HRESULT __stdcall tTVPDSMovie::AddToROT( DWORD ROTreg )
 	if( FAILED(GetRunningObjectTable(0, &pirot)) )
 		return E_FAIL;
 
-	tjs_char	wsz[256];
+	wchar_t	wsz[256];
 //	wsprintfW(wsz, TJS_W("FilterGraph %08x  pid %08x"), (DWORD_PTR) 0, GetCurrentProcessId());
 //	swprintf(wsz, TJS_W("FilterGraph %08x  pid %08x"), (DWORD_PTR) 0, GetCurrentProcessId());
-	(void)StringCchPrintfW(wsz, NUMELMS(wsz), TJS_W("FilterGraph %08x  pid %08x"), (DWORD_PTR) 0, GetCurrentProcessId());
-	HRESULT hr = CreateItemMoniker(TJS_W("!"), wsz, &pmk);
+	(void)StringCchPrintfW(wsz, NUMELMS(wsz), L"FilterGraph %08x  pid %08x", (DWORD_PTR) 0, GetCurrentProcessId());
+	HRESULT hr = CreateItemMoniker(L"!", wsz, &pmk);
 	if( SUCCEEDED(hr) )
 	{
 		hr = pirot->Register( 0, pUnkGraph, pmk, &ROTreg );
@@ -1164,20 +1164,20 @@ void tTVPDSMovie::ParseVideoType( CMediaType &mt, const tjs_char *type )
 {
 	// note: audio-less mpeg stream must have an extension of
 	// ".mpv" .
-	if      (_wcsicmp(type, TJS_W(".mpg")) == 0)
+	if      (_wcsicmp((const wchar_t*)type, L".mpg") == 0)
 		mt.subtype = MEDIASUBTYPE_MPEG1System;
-	else if (_wcsicmp(type, TJS_W(".mpeg")) == 0)
+	else if (_wcsicmp((const wchar_t*)type, L".mpeg") == 0)
 		mt.subtype = MEDIASUBTYPE_MPEG1System;
-	else if (_wcsicmp(type, TJS_W(".mpv")) == 0) 
+	else if (_wcsicmp((const wchar_t*)type, L".mpv") == 0) 
 		mt.subtype = MEDIASUBTYPE_MPEG1Video;
 //		mt.subtype = MEDIASUBTYPE_MPEG1System;
-	else if (_wcsicmp(type, TJS_W(".m1v")) == 0) 
+	else if (_wcsicmp((const wchar_t*)type, L".m1v") == 0) 
 		mt.subtype = MEDIASUBTYPE_MPEG1Video;
-	else if (_wcsicmp(type, TJS_W(".dat")) == 0)
+	else if (_wcsicmp((const wchar_t*)type, L".dat") == 0)
 		mt.subtype = MEDIASUBTYPE_MPEG1VideoCD;
-	else if (_wcsicmp(type, TJS_W(".avi")) == 0)
+	else if (_wcsicmp((const wchar_t*)type, L".avi") == 0)
 		mt.subtype = MEDIASUBTYPE_Avi;
-	else if (_wcsicmp(type, TJS_W(".mov")) == 0)
+	else if (_wcsicmp((const wchar_t*)type, L".mov") == 0)
 		mt.subtype = MEDIASUBTYPE_QTMovie;
 	else {
 #if ENABLE_DSFILTER_PLUGIN
@@ -1198,8 +1198,8 @@ void tTVPDSMovie::ParseVideoType( CMediaType &mt, const tjs_char *type )
 //----------------------------------------------------------------------------
 bool tTVPDSMovie::IsWindowsMediaFile( const tjs_char *type ) const
 {
-	if( (_wcsicmp(type, TJS_W(".asf")) == 0) || (_wcsicmp(type, TJS_W(".wma")) == 0) ||
-		(_wcsicmp(type, TJS_W(".wmv")) == 0) )
+	if( (_wcsicmp((const wchar_t*)type, L".asf") == 0) || (_wcsicmp((const wchar_t*)type, L".wma") == 0) ||
+		(_wcsicmp((const wchar_t*)type, L".wmv") == 0) )
 	{
 		return true;
 	}
@@ -1516,7 +1516,7 @@ void tTVPDSMovie::BuildMPEGGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
 
 	if( FAILED(hr = pMPEG1Splitter.CoCreateInstance(CLSID_MPEG1Splitter, NULL, CLSCTX_INPROC_SERVER)) )
 		ThrowDShowException(TJS_W("Failed to create MPEG 1 splitter filter object."), hr);
-	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEG1Splitter, TJS_W("MPEG-I Stream Splitter"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEG1Splitter, L"MPEG-I Stream Splitter")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pMPEG1Splitter, L\"MPEG-I Stream Splitter\")."), hr);
 	if( FAILED(hr = ConnectFilters( pSrc, pMPEG1Splitter )) )
 		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pSrc, pMPEG1Splitter )."), hr);
@@ -1525,7 +1525,7 @@ void tTVPDSMovie::BuildMPEGGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
 	CComPtr<IBaseFilter>	pMPEGVideoCodec;	// for MPEG 1 video codec filter
 	if( FAILED(hr = pMPEGVideoCodec.CoCreateInstance(CLSID_CMpegVideoCodec, NULL, CLSCTX_INPROC_SERVER)) )
 		ThrowDShowException(TJS_W("Failed to create MPEG 1 video codec filter object."), hr);
-	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEGVideoCodec, TJS_W("MPEG Video Decoder"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEGVideoCodec, L"MPEG Video Decoder")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pMPEGVideoCodec, L\"MPEG Video Decoder\")."), hr);
 	if( FAILED(hr = ConnectFilters( pMPEG1Splitter, pMPEGVideoCodec )) )
 		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pMPEG1Splitter, pMPEGVideoCodec )."), hr);
@@ -1538,7 +1538,7 @@ void tTVPDSMovie::BuildMPEGGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
 	CComPtr<IBaseFilter>	pMPEGAudioCodec;	// for MPEG audio codec filter
 	if( FAILED(hr = pMPEGAudioCodec.CoCreateInstance(CLSID_CMpegAudioCodec, NULL, CLSCTX_INPROC_SERVER)) )
 		ThrowDShowException(TJS_W("Failed to create MPEG audio codec filter object."), hr);
-	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEGAudioCodec, TJS_W("MPEG Audio Decoder"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter(pMPEGAudioCodec, L"MPEG Audio Decoder")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pMPEGAudioCodec, L\"MPEG Audio Decoder\")."), hr);
 	if( FAILED(hr = ConnectFilters( pMPEG1Splitter, pMPEGAudioCodec )) )
 	{	// not have Audio.
@@ -1551,7 +1551,7 @@ void tTVPDSMovie::BuildMPEGGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
 	CComPtr<IBaseFilter>	pDDSRenderer;	// for sound renderer filter
 	if( FAILED(hr = pDDSRenderer.CoCreateInstance(CLSID_DSoundRender, NULL, CLSCTX_INPROC_SERVER)) )
 		ThrowDShowException(TJS_W("Failed to create sound render filter object."), hr);
-	if( FAILED(hr = GraphBuilder()->AddFilter(pDDSRenderer, TJS_W("Sound Renderer"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter(pDDSRenderer, L"Sound Renderer")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pDDSRenderer, L\"Sound Renderer\")."), hr);
 	if( FAILED(hr = ConnectFilters( pMPEGAudioCodec, pDDSRenderer ) ) )
 	{
@@ -1614,7 +1614,7 @@ void tTVPDSMovie::BuildWMVGraph( IBaseFilter *pRdr, IStream *pStream )
 	if( FAILED(hr = pWMAS->OpenStream( pStream ) ) )
 		ThrowDShowException(TJS_W("Failed to call CDemuxSource::OpenStream( stream )."), hr);
 
-	if( FAILED(hr = GraphBuilder()->AddFilter( pWMSource, TJS_W("Windows Media stream source"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter( pWMSource, L"Windows Media stream source")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pWMSource, L\"Windows Media stream source\")."), hr);
 
 	CComPtr<IBaseFilter>	pWMVDec;
@@ -1628,7 +1628,7 @@ void tTVPDSMovie::BuildWMVGraph( IBaseFilter *pRdr, IStream *pStream )
 		if( FAILED(hr = pWmvDmoWrapper->Init(CLSID_WMVDecoderDMO, DMOCATEGORY_VIDEO_DECODER)) )
 			ThrowDShowException(TJS_W("Failed to call IDMOWrapperFilter::Init."), hr);
 	}
-	if( FAILED(hr = GraphBuilder()->AddFilter( pWMVDec, TJS_W("Windows Media Video Decoder (DMO Wrapper)"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter( pWMVDec, L"Windows Media Video Decoder (DMO Wrapper)")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pWMVDec, L\"Windows Media Video Decoder (DMO Wrapper)\")."), hr);
 
 	// Connect to decoder filter
@@ -1650,7 +1650,7 @@ void tTVPDSMovie::BuildWMVGraph( IBaseFilter *pRdr, IStream *pStream )
 		if( FAILED(hr = pWmaDmoWrapper->Init(CLSID_WMADecoderDMO, DMOCATEGORY_AUDIO_DECODER)) )
 			ThrowDShowException(TJS_W("Failed to call IDMOWrapperFilter::Init."), hr);
 	}
-	if( FAILED(hr = GraphBuilder()->AddFilter( pWMADec, TJS_W("Windows Media Audio Decoder (DMO Wrapper)"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter( pWMADec, L"Windows Media Audio Decoder (DMO Wrapper)")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pWMADec, L\"Windows Media Audio Decoder (DMO Wrapper)\")."), hr);
 
 	// Connect to decoder filter
@@ -1664,7 +1664,7 @@ void tTVPDSMovie::BuildWMVGraph( IBaseFilter *pRdr, IStream *pStream )
 	CComPtr<IBaseFilter>	pDDSRenderer;	// for sound renderer filter
 	if( FAILED(hr = pDDSRenderer.CoCreateInstance(CLSID_DSoundRender, NULL, CLSCTX_INPROC_SERVER)) )
 		ThrowDShowException(TJS_W("Failed to create sound render filter object."), hr);
-	if( FAILED(hr = GraphBuilder()->AddFilter(pDDSRenderer, TJS_W("Sound Renderer"))) )
+	if( FAILED(hr = GraphBuilder()->AddFilter(pDDSRenderer, L"Sound Renderer")) )
 		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pDDSRenderer, L\"Sound Renderer\")."), hr);
 	if( FAILED(hr = ConnectFilters( pWMADec, pDDSRenderer ) ) )
 		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pWMADec, pDDSRenderer )."), hr);

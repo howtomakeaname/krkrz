@@ -233,11 +233,11 @@ void __stdcall tTVPMFPlayer::BuildGraph( HWND callbackwin, IStream *stream,
 //! @param		type : ムービーファイルの拡張子
 //----------------------------------------------------------------------------
 const tjs_char * tTVPMFPlayer::ParseVideoType( const tjs_char *type ) {
-	if( _wcsicmp( type, TJS_W( ".mp4" ) ) == 0 )
+	if( _wcsicmp( (const wchar_t*)type, L".mp4" ) == 0 )
 		return TJS_W( "video/mp4" );
-	else if( _wcsicmp( type, TJS_W( ".wmv" ) ) == 0 )
+	else if( _wcsicmp( (const wchar_t*)type, L".wmv" ) == 0 )
 		return TJS_W("video/x-ms-wmv");
-	else if( _wcsicmp( type, TJS_W( ".avi" ) ) == 0 )
+	else if( _wcsicmp( (const wchar_t*)type, L".avi" ) == 0 )
 		return TJS_W( "video/x-msvideo" );
 	else
 		TVPThrowExceptionMessage( TJS_W( "Unknown video format extension." ) ); // unknown format
@@ -338,7 +338,7 @@ HRESULT tTVPMFPlayer::CreateVideoPlayer() {
 			}
 		}
 		if( hasContentType == false ) {
-			if( FAILED( hr = pAttribute->SetString( MF_BYTESTREAM_CONTENT_TYPE, ContentType.c_str() ) ) ) {
+			if( FAILED( hr = pAttribute->SetString( MF_BYTESTREAM_CONTENT_TYPE, (LPWSTR)ContentType.c_str() ) ) ) {
 				ThrowDShowException( TJS_W( "Faild to set content type." ), hr );
 			}
 		}

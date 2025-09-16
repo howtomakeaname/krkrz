@@ -2,12 +2,20 @@
 
 ## 概要
 
-マルチプラットフォーム想定した吉里吉里Zです
+マルチプラットフォーム展開を想定した吉里吉里Zです
 
 ・OpenGLベース描画機構を持ちます Canvas/Screen/Texture/Shader
 ・極力外部ライブラリを参照する形で構築されています。
 
 外部ライブラリの参照には vcpkg を利用しています。
+
+このレポジトリには以下の構成が含まれています
+
+1. 機種依存部をなるべく削除したライブラリ版吉里吉里Z
+2. 従来のWIN32版準拠の吉里吉里Z
+3. OpenGL 拡張用のコード
+
+※ Windows以外の環境用のバイナリ生成には別途 krkrz_sdl / krkrz_glfw のレポジトリを利用して下さい
 
 ## 開発環境準備
 
@@ -73,14 +81,15 @@ CMakePresets.json 中のプリセット定義をつかってビルドします�
 export PRESET=x86-windows
 
 # ビルドタイプ指定（未定義時は Release）
-export BUILD_TYPE=Debug
-#export BUILD_TYPE=RelWithDebInfo
-#export BUILD_TYPE=Release
+export BUILD_TYPE=Master
+#export BUILD_TYPE=Develop
+#export BUILD_TYPE=Debug
 
 # cmake オプション指定
-# USESJIS  デフォルトをSJIS(MBSC) にする
-# USEOPENGL OPELGL系機能を使う（起動時に GLESのdllが必要になる）
-export CMAKEOPT="-DUSESJIS=ON"
+# BUILD_LIB ライブラリ版を構成する
+# USE_SJIS  デフォルトをSJIS(MBSC) にする
+# USE_OPENGL OPELGL系機能を使う（起動時に GLESのdllが必要になる）
+export CMAKEOPT="-DUSE_SJIS=ON"
 
 # cmake プロジェクト生成
 # この段階で vcpkg が処理されてライブラリが準備されます
@@ -105,9 +114,8 @@ Makefile にそのままトップフォルダで実行可能なルールが定�
 make run
 ```
 
-動作時は以下のファイル構成が必要になります
+OpenGL 動作時は以下のファイル構成が必要になります
 
-    data/ 実行用データ
     plugin/ プラグインフォルダ
       libEGL.dll        OpenGL の egl用DLL
       libGLESv2.dll     OpenGL の GLES2用DLL
@@ -156,7 +164,6 @@ launch.json
 ```
 
 # その他情報
-　
 
 tvpsnd_ia32
 nasm 2.10.09 が必要です。

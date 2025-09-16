@@ -1,9 +1,10 @@
-
 #ifndef __GL_TEXTURE_H__
 #define __GL_TEXTURE_H__
 
 #include "OpenGLHeader.h"
 #include <functional>
+
+#include "TextureInfo.h"
 
 struct GLTextreImageSet {
 	GLuint width;
@@ -18,7 +19,8 @@ class GLTexture {
 
 protected:
 	GLuint texture_id_;
-	GLint format_;
+	tTVPTextureColorFormat format_;
+	GLuint glformat_;
 	GLuint width_;
 	GLuint height_;
 	GLuint pbo_;
@@ -27,17 +29,41 @@ protected:
 	GLenum wrapS_;
 	GLenum wrapT_;
 	bool hasMipmap_ = false;
+
+private:
+	/**
+	 * GPU上でテクスチャをコピーするヘルパーメソッド
+	 */
+	void copyTextureOnGPU(const GLTexture& source);
+
 public:
-	GLTexture() : texture_id_(0), width_(0), height_(0), pbo_(0), format_(0), stretchType_(GL_LINEAR), wrapS_(GL_CLAMP_TO_EDGE), wrapT_(GL_CLAMP_TO_EDGE) {}
-	GLTexture( GLuint w, GLuint h, const GLvoid* bits=0, GLint format=GL_RGBA ) 
-	: texture_id_(0), width_(w), height_(h), pbo_(0), format_(0), stretchType_(GL_LINEAR), wrapS_(GL_CLAMP_TO_EDGE), wrapT_(GL_CLAMP_TO_EDGE) {
+	GLTexture() : texture_id_(0), width_(0), height_(0), pbo_(0), format_(tTVPTextureColorFormat::RGBA), stretchType_(GL_LINEAR), wrapS_(GL_CLAMP_TO_EDGE), wrapT_(GL_CLAMP_TO_EDGE) {}
+	GLTexture( GLuint w, GLuint h, const GLvoid* bits=0, tTVPTextureColorFormat format=tTVPTextureColorFormat::RGBA)
+	: texture_id_(0), width_(w), height_(h), pbo_(0), format_(format), stretchType_(GL_LINEAR), wrapS_(GL_CLAMP_TO_EDGE), wrapT_(GL_CLAMP_TO_EDGE) {
 		create( w, h, bits, format );
+	}
+	// コピーコンストラクタ
+	GLTexture(const GLTexture& other) : texture_id_(0), width_(0), height_(0), pbo_(0), format_(tTVPTextureColorFormat::RGBA), stretchType_(GL_LINEAR), wrapS_(GL_CLAMP_TO_EDGE), wrapT_(GL_CLAMP_TO_EDGE) {
+		copyFrom(other);
+	}
+	// コピー代入演算子
+	GLTexture& operator=(const GLTexture& other) {
+		if (this != &other) {
+			destory();
+			copyFrom(other);
+		}
+		return *this;
 	}
 	~GLTexture() {
 		destory();
 	}
 
-	void create( GLuint w, GLuint h, const GLvoid* bits=0, GLint format=GL_RGBA );
+	void create( GLuint w, GLuint h, const GLvoid* bits=0, tTVPTextureColorFormat format=tTVPTextureColorFormat::RGBA);
+
+	/**
+	 * 既存のGLTextureから内容を複製する
+	 */
+	void copyFrom(const GLTexture& source);
 
 	/**
 	* ミップマップを持つテクスチャを生成する
@@ -78,8 +104,10 @@ public:
 	GLuint width() const { return width_; }
 	GLuint height() const { return height_; }
 	GLuint id() const { return texture_id_; }
-	GLint format() const { return format_; }
+	GLint glformat() const { return glformat_; }
 	GLint pbo() const { return pbo_; }
+
+	tTVPTextureColorFormat format() const { return format_; }
 
 	GLenum stretchType() const { return stretchType_; }
 	void setStretchType( GLenum s ) {
@@ -116,6 +144,28 @@ public:
 
     static void UpdateTexture(GLuint tex_id, GLuint pbo, int format, int x, int y, int w, int h, std::function<void(char *dest, int pitch)> updator);
     void UpdateTexture(int x, int y, int w, int h, std::function<void(char *dest, int pitch)> updator);
+
+public:
+	static bool _support_inited;
+	static bool _support_bgra;
+	static bool _support_swizzle;
+	static bool _support_copy_image;
+	static void InitSupported();
+
+	static bool SupportBGRAFormat() { 
+		InitSupported();
+		return _support_bgra;
+	}
+
+	static bool SupportBGRA() { 
+		InitSupported();
+		return _support_bgra || _support_swizzle;
+	}
+
+	static bool SupportCopyImage() {
+		InitSupported();
+		return _support_copy_image;
+	}
 };
 
 class GLTextureDrawer

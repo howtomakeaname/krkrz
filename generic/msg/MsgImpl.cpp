@@ -14,6 +14,7 @@
 #include <iostream>
 #include "Application.h"
 #include "CharacterSet.h"
+#include "StorageIntf.h"
 
 #define TVP_MSG_DECL(name, msg) tTJSMessageHolder name(TJS_W(#name), msg);
 #define TVP_MSG_DECL_CONST(name, msg) tTJSMessageHolder name(TJS_W(#name), msg, false);
@@ -50,8 +51,9 @@ extern const tjs_char* TVPCompileTime;
 ttstr TVPReadAboutStringFromResource() {
 
 	// read license file from resource
+	tjs_string path = Application->ResourcePath() + TJS_W("license.txt");
 	tjs_uint64 flen;
-	auto buf = Application->ReadResource(TJS_W("license.txt"), &flen);
+	auto buf = TVPReadStream(path.c_str(), &flen);
 	if( buf.get() == nullptr ) {
 		return ttstr(TJS_W("Resource Read Error."));
 	}

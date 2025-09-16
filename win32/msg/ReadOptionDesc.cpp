@@ -185,7 +185,7 @@ static BOOL CALLBACK TVPEnumResNameProc( HMODULE hModule, LPCTSTR lpszType, LPTS
 }
 };
 tTVPCommandOptionList* TVPGetPluginCommandDesc( const tjs_char* name ) {
-	HMODULE hModule = ::LoadLibraryEx( name, NULL, LOAD_LIBRARY_AS_DATAFILE );
+	HMODULE hModule = ::LoadLibraryEx( (const wchar_t*)name, NULL, LOAD_LIBRARY_AS_DATAFILE );
 	if( hModule == NULL ) return NULL;
 	const char *buf = NULL;
 	unsigned int size = 0;
@@ -194,7 +194,7 @@ tTVPCommandOptionList* TVPGetPluginCommandDesc( const tjs_char* name ) {
 		//BOOL typeret = ::EnumResourceTypes( hModule, (ENUMRESTYPEPROC)EnumResTypeProc,  NULL );
 		//BOOL resret = ::EnumResourceNames( hModule, TJS_W("TEXT"), (ENUMRESNAMEPROC)TVPEnumResNameProc, NULL );
 
-		HRSRC hRsrc = ::FindResource(hModule, TJS_W("IDR_OPTION_DESC_JSON"), TJS_W("TEXT") );
+		HRSRC hRsrc = ::FindResource(hModule, L"IDR_OPTION_DESC_JSON", L"TEXT" );
 		if( hRsrc != NULL ) {
 			size = ::SizeofResource( hModule, hRsrc );
 			HGLOBAL hGlobal = ::LoadResource( hModule, hRsrc );

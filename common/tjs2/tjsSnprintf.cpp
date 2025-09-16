@@ -1,18 +1,5 @@
 #include "tjsCommHead.h"
 
-#if defined(_WIN32)
-
-#include <stdio.h>
-namespace TJS
-{
-	tjs_int TJS_vsnprintf( tjs_char *str, size_t count, const tjs_char *fmt, va_list args )
-	{
-		return _vsnwprintf( str, count, fmt, args );
-	}
-}
-
-#else
-
 /*
  * Copyright Patrick Powell 1995
  * This code is based on code written by Patrick Powell (papowell@astart.com)
@@ -863,8 +850,6 @@ namespace TJS
 		return dopr( str, count, fmt, args );
 	}
 }
-
-#endif
 
 namespace TJS
 {

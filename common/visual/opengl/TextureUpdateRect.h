@@ -92,7 +92,7 @@ public:
         const tjs_uint8 *src  = src_p + src_pitch * src_y + src_x * 4;
         tjs_uint8 *dest = mBuffer + mPitch * y + x * 4;
 
-        if (texture->GetImageFormat() == GL_BGRA_EXT /*bgra*/) {
+        if (GLTexture::SupportBGRA()) {
             for (int line=0; line < h; line++) {
                 ::memcpy(dest, src, w*4);
                 dest += mPitch;

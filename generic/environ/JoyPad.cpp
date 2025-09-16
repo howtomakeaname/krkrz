@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "WindowForm.h"
+#include "Logintf.h"
 
 // ビット位置とキーマップの対応
 static int TVPPadVirtualKeyMap[] = {
@@ -17,28 +18,27 @@ static int TVPPadVirtualKeyMap[] = {
     VK_PAD8,        // RT
     VK_PAD9,        // SELECT
     VK_PAD10,       // START
-    VK_PAD10+1,       // L3
-    VK_PAD10+2,       // R3
-    VK_PAD10+3,   // アナログ左上下左右
-    VK_PAD10+4,   // アナログ左上下左右
-    VK_PAD10+5,   // アナログ左上下左右
-    VK_PAD10+6,   // アナログ左上下左右
-    VK_PAD10+7,   // 左追加ボタン
-    VK_PAD10+8,   // 左追加ボタン
-    VK_PAD10+9,   // アナログ右上下左右
-    VK_PAD10+10,  // アナログ右上下左右
-    VK_PAD10+11,  // アナログ右上下左右
-    VK_PAD10+12,  // アナログ右上下左右
-    VK_PAD10+13,  // 右追加ボタン
-    VK_PAD10+14,  // 右追加ボタン
-// 24
-    VK_PADLEFT,     // 左
+    VK_PAD11,       // L3
+    VK_PAD12,       // R3
+//12
+	VK_PADLEFT,     // 左
     VK_PADUP,       // 上
     VK_PADRIGHT,    // 右
     VK_PADDOWN,     // 下
+//16
+	VK_PAD_L_LEFT,  // アナログ左上下左右
+    VK_PAD_L_UP,    // アナログ左上下左右
+    VK_PAD_L_RIGHT, // アナログ左上下左右
+    VK_PAD_L_DOWN,  // アナログ左上下左右
+//20
+	VK_PAD_R_LEFT,  // アナログ右上下左右
+    VK_PAD_R_UP,    // アナログ右上下左右
+    VK_PAD_R_RIGHT, // アナログ右上下左右
+    VK_PAD_R_DOWN,  // アナログ右上下左右
+// 24
 };
 
-#define TVP_NUM_PAD_KEY 28
+#define TVP_NUM_PAD_KEY 24
 
 // 以前のパッド状態
 static tjs_uint32 LastPadState = 0;
@@ -59,10 +59,14 @@ tTVPApplication::GetAsyncKeyState(tjs_uint keycode, bool getcurrent)
 {
 	if (getcurrent) { // false ならトグル状態取得 XXX
 		int code = -1;
-		if (keycode >= VK_PAD1 && keycode <= VK_PAD10+14) { // 他のボタン
+		if (keycode >= VK_PAD1 && keycode <= VK_PAD12) { // 他のボタン
 			code = keycode-VK_PAD1;
 		} else if (keycode >= VK_PADLEFT && keycode <= VK_PADDOWN) { // カーソル
-			code = keycode-VK_PADLEFT + VK_PAD10 + 15 - VK_PAD1;
+			code = keycode-VK_PADLEFT + 12;
+		} else if (keycode >= VK_PAD_L_LEFT && keycode <= VK_PAD_L_DOWN) { // カーソル
+			code = keycode-VK_PAD_L_LEFT + 16;
+		} else if (keycode >= VK_PAD_R_LEFT && keycode <= VK_PAD_R_DOWN) { // カーソル
+			code = keycode-VK_PAD_R_LEFT + 20;
 		}
 		if (code >= 0) {
 			return (LastPadState & (1<<code)) != 0;
@@ -92,7 +96,7 @@ tTVPApplication::SendPadEvent()
 	// key repeats are calculated about two groups independently.
 	// one is cross-keys(up, down, left, right) and the other is
 	// trigger buttons(button0 .. button9).
-	const tjs_uint32 cross_group_mask = 0x0f<<24;
+	const tjs_uint32 cross_group_mask = 0xfff<<12;
 	const tjs_uint32 trigger_group_mask = ~cross_group_mask;
 
 	if(!(LastPadState & cross_group_mask) && (newstate & cross_group_mask))

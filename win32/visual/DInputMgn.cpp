@@ -189,7 +189,7 @@ IDirectInput * TVPAddRefDirectInput()
 
 	TVPDirectInputInit = true;
 
-	TVPDirectInputLibHandle = ::LoadLibrary( TJS_W("dinput.dll") );
+	TVPDirectInputLibHandle = ::LoadLibrary( L"dinput.dll" );
 	if(!TVPDirectInputLibHandle) return NULL; // load error; is not a fatal error
 
 	HRESULT (WINAPI *procDirectInputCreateW)

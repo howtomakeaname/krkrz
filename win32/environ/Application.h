@@ -104,10 +104,7 @@ public:
 	tjs_string ExePath();
 	tjs_string PluginPath();
 
-	void PrintConsole( const tjs_char* mes, unsigned long len, bool iserror = false );
 	bool IsAttachConsole() { return is_attach_console_; }
-
-	int DPRINTF( const tjs_char* fmt, ...); //< ログ（デバッグ）用
 
 	bool IsTarminate() const { return tarminate_; }
 
@@ -142,7 +139,7 @@ public:
 	void SetTitle( const tjs_string& caption );
 
 	static inline int MessageDlg( const tjs_string& string, const tjs_string& caption, int type, int button ) {
-		return ::MessageBox( nullptr, string.c_str(), caption.c_str(), type|button  );
+		return ::MessageBox( nullptr, (const wchar_t*)string.c_str(), (const wchar_t*)caption.c_str(), type|button  );
 	}
 	void Terminate() {
 		::PostQuitMessage(0);

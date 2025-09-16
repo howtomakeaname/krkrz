@@ -197,7 +197,7 @@ public:
 		const int MAX_LENGTH = 1024;
 		const int num_of_items = sizeof(DLG_ITEM_IDS)/sizeof(DLG_ITEM_IDS[0]);
 		HINSTANCE hInstance = ::GetModuleHandle(0);
-		tjs_char buffer[MAX_LENGTH];
+		wchar_t buffer[MAX_LENGTH];
 		for( int i = 0; i < num_of_items; i++ ) {
 			HWND hBtn = ::GetDlgItem( hWnd, DLG_ITEM_IDS[i] );
 			if( hBtn != NULL ) {
@@ -505,7 +505,7 @@ void TVPShowUserConfig()
 		if( result == IDOK ) {
 			if( DialogForm ) {
 				DialogForm->SaveSetting();
-				::MessageBox( NULL, TJS_W("設定を保存しました"), TJS_W("Save Option"), MB_OK );
+				::MessageBox( NULL, L"設定を保存しました", L"Save Option", MB_OK );
 			}
 		}
 	} catch(...) {

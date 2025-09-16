@@ -104,7 +104,7 @@ static void PNG_read_row_callback(png_structp png_ptr,png_uint_32 row,int pass)
 static int PNG_read_chunk_callback(png_structp png_ptr,png_unknown_chunkp chunk)
 {
 	// handle vpAg chunk (this will contain the virtual page size of the image)
-	// vpAg chunk can be embeded by ImageMagick -trim option etc.
+	// vpAg chunk can be embeded by old ImageMagick -trim option etc.
 	// we don't care about how the chunk bit properties are being provided.
 	if(	(chunk->name[0] == 0x76/*'v'*/ || chunk->name[0] == 0x56/*'V'*/) &&
 		(chunk->name[1] == 0x70/*'p'*/ || chunk->name[1] == 0x50/*'P'*/) &&
@@ -142,6 +142,39 @@ static int PNG_read_chunk_callback(png_structp png_ptr,png_unknown_chunkp chunk)
 			user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_vpag_unit, PNG_tag_unknown);
 			break;
 		}
+		return 1; // chunk read success
+	}
+	// handle caNv chunk (this will contain the virtual page size of the image)
+	// caNv chunk can be embeded by new ImageMagick -trim option etc.
+	// we don't care about how the chunk bit properties are being provided.
+	else if((chunk->name[0] == 'c') &&
+		(chunk->name[1] == 'a' ) &&
+		(chunk->name[2] == 'N' ) &&
+		(chunk->name[3] == 'v' ) && chunk->size >= 16)
+	{
+		PNG_read_chunk_callback_user_struct * user_struct =
+			reinterpret_cast<PNG_read_chunk_callback_user_struct *>(png_get_user_chunk_ptr(png_ptr));
+		// caNv found
+		/*
+			uint32 width
+			uint32 height
+			uint32 offx
+			uint32 offy
+		*/
+		// be careful because the integers are stored in network byte order
+		#define PNG_read_be32(a) (((tjs_uint32)(a)[0]<<24)+\
+			((tjs_uint32)(a)[1]<<16)+((tjs_uint32)(a)[2]<<8)+\
+			((tjs_uint32)(a)[3]))
+		tjs_uint32 width    = PNG_read_be32(chunk->data+0);
+		tjs_uint32 height   = PNG_read_be32(chunk->data+4);
+		tjs_uint32 offset_x = PNG_read_be32(chunk->data+8);
+		tjs_uint32 offset_y = PNG_read_be32(chunk->data+12);
+		// push information into meta-info
+		user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_vpag_w, ttstr((tjs_int)width));
+		user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_vpag_h, ttstr((tjs_int)height));
+		user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_offs_x, ttstr((tjs_int)offset_x));
+		user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_offs_y, ttstr((tjs_int)offset_y));
+		user_struct->metainfopushcallback(user_struct->callbackdata, PNG_tag_vpag_unit, PNG_tag_pixel);
 		return 1; // chunk read success
 	}
 	return 0; // did not recognize

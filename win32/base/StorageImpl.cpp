@@ -127,7 +127,7 @@ void TJS_INTF_METHOD tTVPFileMedia::GetListAt(const ttstr &_name, iTVPStorageLis
 
 	// perform UNICODE operation
 	WIN32_FIND_DATAW ffd;
-	HANDLE handle = ::FindFirstFile(name.c_str(), &ffd);
+	HANDLE handle = ::FindFirstFile((const wchar_t*)name.c_str(), &ffd);
 	if(handle != INVALID_HANDLE_VALUE)
 	{
 		BOOL cont;
@@ -283,9 +283,9 @@ ttstr TVPGetTemporaryName()
 
 		if(!TVPTempPathInit)
 		{
-			tjs_char tmp[MAX_PATH+1];
+			wchar_t tmp[MAX_PATH+1];
 			::GetTempPath(MAX_PATH, tmp);
-			TVPTempPath = tmp;
+			TVPTempPath = (tjs_char*)tmp;
 
 			if(TVPTempPath.GetLastChar() != TJS_W('\\')) TVPTempPath += TJS_W("\\");
 			TVPProcessID = (tjs_int) GetCurrentProcessId();
@@ -317,7 +317,7 @@ ttstr TVPGetTemporaryName()
 //---------------------------------------------------------------------------
 bool TVPRemoveFile(const ttstr &name)
 {
-	return 0!=::DeleteFile(name.c_str());
+	return 0!=::DeleteFile((const wchar_t*)name.c_str());
 }
 //---------------------------------------------------------------------------
 
@@ -328,7 +328,7 @@ bool TVPRemoveFile(const ttstr &name)
 //---------------------------------------------------------------------------
 bool TVPRemoveFolder(const ttstr &name)
 {
-	return 0!=RemoveDirectory(name.c_str());
+	return 0!=RemoveDirectory((const wchar_t*)name.c_str());
 }
 //---------------------------------------------------------------------------
 
@@ -374,15 +374,15 @@ iTJSBinaryStream * TVPOpenStream(const ttstr & _name, tjs_uint32 flags)
 //---------------------------------------------------------------------------
 bool TVPCheckExistentLocalFile(const ttstr &name)
 {
-	DWORD attrib = ::GetFileAttributes(name.c_str());
+	DWORD attrib = ::GetFileAttributes((const wchar_t*)name.c_str());
 	if(attrib == 0xffffffff || (attrib & FILE_ATTRIBUTE_DIRECTORY))
 		return false; // not a file
 
 #ifdef TVP_LOCALFILE_FORCE_CASESENSITIVE
 	// case 違いでエラーを返す
 	SHFILEINFOW info;
-	if (SHGetFileInfoW(name.c_str(), 0, &info, sizeof(info), SHGFI_DISPLAYNAME ) ) {
-		if (TJS_strcmp(info.szDisplayName, ::PathFindFileName(name.c_str())) != 0) {
+	if (SHGetFileInfoW((const wchar_t*)name.c_str(), 0, &info, sizeof(info), SHGFI_DISPLAYNAME ) ) {
+		if (TJS_strcmp((const tjs_char*)info.szDisplayName, (const tjs_char*)::PathFindFileName((const wchar_t*)name.c_str())) != 0) {
 			return false;
 		}
 	}
@@ -399,7 +399,7 @@ bool TVPCheckExistentLocalFile(const ttstr &name)
 //---------------------------------------------------------------------------
 bool TVPCheckExistentLocalFolder(const ttstr &name)
 {
-	DWORD attrib = GetFileAttributes(name.c_str());
+	DWORD attrib = GetFileAttributes((const wchar_t*)name.c_str());
 	if(attrib != 0xffffffff && (attrib & FILE_ATTRIBUTE_DIRECTORY))
 		return true; // a folder
 	else
@@ -476,7 +476,7 @@ static bool _TVPCreateFolders(const ttstr &folder)
 
 	if(!_TVPCreateFolders(parent)) return false;
 
-	BOOL res = ::CreateDirectory(folder.c_str(), NULL);
+	BOOL res = ::CreateDirectory((const wchar_t*)folder.c_str(), NULL);
 	return 0!=res;
 }
 
@@ -527,7 +527,7 @@ tTVPLocalFileStream::tTVPLocalFileStream(const ttstr &origname,
 
 retry:
 	Handle = CreateFile(
-		localname.c_str(),
+		(const wchar_t*)localname.c_str(),
 		rw,
 		FILE_SHARE_READ, // read shared accesss is strongly needed
 		NULL,
@@ -1108,16 +1108,16 @@ ttstr TVPSearchCD(const ttstr & name)
 	// return empty string if not found.
 	tjs_string narrow_name = name.AsStdString();
 
-	tjs_char dr[4];
+	wchar_t dr[4];
 	for(dr[0]=TJS_W('A'),dr[1]=TJS_W(':'),dr[2]=TJS_W('\\'),dr[3]=0;dr[0]<=TJS_W('Z');dr[0]++)
 	{
 		if(::GetDriveType(dr) == DRIVE_CDROM)
 		{
-			tjs_char vlabel[256];
-			tjs_char fs[256];
+			wchar_t vlabel[256];
+			wchar_t fs[256];
 			DWORD mcl = 0,sfs = 0;
 			GetVolumeInformation(dr, vlabel, 255, NULL, &mcl, &sfs, fs, 255);
-			if( icomp(tjs_string(vlabel),narrow_name) )
+			if( icomp(tjs_string((tjs_char*)vlabel),narrow_name) )
 			//if(std::string(vlabel).AnsiCompareIC(narrow_name)==0)
 				return ttstr((tjs_char)dr[0]);
 		}

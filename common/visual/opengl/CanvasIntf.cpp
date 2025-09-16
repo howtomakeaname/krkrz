@@ -231,6 +231,8 @@ void tTJSNI_Canvas::BeginDrawing()
 	glClearColor( c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
+	glDisable(GL_FRAMEBUFFER_SRGB_EXT); // sRGB補整の無効化
+
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_STENCIL_TEST );
 
@@ -345,7 +347,7 @@ void tTJSNI_Canvas::Capture( class tTJSNI_Bitmap* bmp, int x, int y, int w, int 
 	// FBから取得
 	// XXX FBのフォーマットを参照する必要あり
 	glReadPixels( x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<tjs_uint8*>(src) );
-	CheckGLErrorAndLog(TJS_W("glReadPixels"));
+	CheckGLErrorAndLog("glReadPixels");
 	for( tjs_int i = 0; i < h; i++ ) {
 		// Y方向は逆順に入れ換え
 		tjs_uint32* dest = reinterpret_cast<tjs_uint32*>(b->GetScanLineForWrite(h-i-1));

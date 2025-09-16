@@ -176,7 +176,7 @@ tTJSNI_BaseWindow::InitDrawContext(iTJSDispatch2 *tjs_obj)
 		iTJSDispatch2 * newobj = NULL;
 		try
 		{
-			cls = TVPCreateDefaultDrawDevice();
+			cls = TVPGetDefaultDrawDevice();
 			if(TJS_FAILED(cls->CreateNew(0, NULL, NULL, &newobj, 0, NULL, cls)))
 				TVPThrowExceptionMessage(TVPInternalError,
 					TJS_W("tTJSNI_Window::Construct"));

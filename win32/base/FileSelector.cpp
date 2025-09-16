@@ -169,7 +169,7 @@ bool TVPSelectFile(iTJSDispatch2 *params)
 			*(p++) = 0;
 			*(p++) = 0;
 
-			ofn.lpstrFilter = filter;
+			ofn.lpstrFilter = (const wchar_t*)filter;
 		}
 
 		ofn.lpstrCustomFilter = NULL;
@@ -197,7 +197,7 @@ bool TVPSelectFile(iTJSDispatch2 *params)
 			}
 		}
 
-		ofn.lpstrFile = filename;
+		ofn.lpstrFile = (wchar_t*)filename;
 		ofn.nMaxFile = MAX_PATH + 1;
 		ofn.lpstrFileTitle = NULL;
 		ofn.nMaxFileTitle = 0;
@@ -212,7 +212,7 @@ bool TVPSelectFile(iTJSDispatch2 *params)
 				lname = TVPNormalizeStorageName(lname);
 				TVPGetLocalName(lname);
 				initialdir = lname.AsStdString();
-				ofn.lpstrInitialDir = initialdir.c_str();
+				ofn.lpstrInitialDir = (const wchar_t*)initialdir.c_str();
 			}
 		}
 	
@@ -220,7 +220,7 @@ bool TVPSelectFile(iTJSDispatch2 *params)
 		if(TJS_SUCCEEDED(params->PropGet(TJS_MEMBERMUSTEXIST, TJS_W("title"), 0, &val, params)))
 		{
 			title = ttstr(val).AsStdString();
-			ofn.lpstrTitle = title.c_str();
+			ofn.lpstrTitle = (const wchar_t*)title.c_str();
 		}
 		else
 		{
@@ -245,7 +245,7 @@ bool TVPSelectFile(iTJSDispatch2 *params)
 		if(TJS_SUCCEEDED(params->PropGet(TJS_MEMBERMUSTEXIST, TJS_W("defaultExt"), 0, &val, params)))
 		{
 			defaultext = ttstr(val).AsStdString();
-			ofn.lpstrDefExt = defaultext.c_str();
+			ofn.lpstrDefExt = (const wchar_t*)defaultext.c_str();
 		}
 		else
 		{

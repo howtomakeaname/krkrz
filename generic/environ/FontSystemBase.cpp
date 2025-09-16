@@ -5,6 +5,7 @@
 #include <MsgIntf.h>
 #include "SysInitIntf.h"
 #include "CharacterSet.h"
+#include "StorageIntf.h"
 
 #include <ft2build.h>
 #include FT_TRUETYPE_UNPATENTED_H
@@ -28,6 +29,23 @@ void TVPGetAllFontList( std::vector<tjs_string>& list )
 		// システムフォントを読み込む
 		std::vector<tjs_string> fontList;
 		Application->GetSystemFontList(fontList);
+
+		// リソース中のフォント一覧を吸い出す
+		struct MyLister : iTVPStorageLister {
+			std::vector<tjs_string> &list;
+			ttstr base;
+			MyLister(std::vector<tjs_string> &list, const ttstr &base) : list(list), base(base) {}
+			void TJS_INTF_METHOD Add(const ttstr &name) {
+				// フォント名を取得する
+				ttstr ext = TVPExtractStorageExt(name);
+				if( ext == TJS_W(".ttf") || ext == TJS_W(".otf") ) {
+					tjs_string path = base.c_str();
+					path += name.c_str();
+					list.push_back(path);
+				}
+			}
+		} lister(fontList, Application->ResourcePath());
+		TVPGetStorageListAt(Application->ResourcePath(), &lister);
 		for (auto it=fontList.begin();it != fontList.end(); it++) {
 			TVPAddSystemFontToFreeType(*it, &list);
 		}

@@ -93,8 +93,6 @@ static char MEMORY_EXHAUSTED[] = "memory exhausted";
 /* tjspp.y */
 /* TJS2 conditional compiling control's conditional expression parser */
 
-#include <malloc.h>
-
 #include "tjs.h"
 #include "tjsCompileControl.h"
 
@@ -310,7 +308,7 @@ YYID (yyi)
 #   elif defined _AIX
 #    define YYSTACK_ALLOC __alloca
 #   elif defined _MSC_VER
-#    include <malloc.h> /* INFRINGES ON USER NAME SPACE */
+#    include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #    define alloca _alloca
 #   else
 #    define YYSTACK_ALLOC alloca

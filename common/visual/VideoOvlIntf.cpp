@@ -14,6 +14,7 @@
 #include "WindowIntf.h"
 #include "VideoOvlIntf.h"
 #include "LayerIntf.h"
+#include "LogIntf.h"
 
 //---------------------------------------------------------------------------
 // tTJSNI_BaseVideoOverlay
@@ -97,6 +98,9 @@ void tTJSNI_BaseVideoOverlay::SetStatus(tTVPVideoOverlayStatus s)
 	{
 		Status = s;
 
+		ttstr statusString =  GetStatusString();
+		TVPLOG_INFO("VideoOverlay status changed: {}", statusString);
+
 		if(Owner)
 		{
 			// Cancel Previous un-delivered Events
@@ -122,6 +126,9 @@ void tTJSNI_BaseVideoOverlay::SetStatusAsync(tTVPVideoOverlayStatus s)
 	if(Status != s)
 	{
 		Status = s;
+
+		ttstr statusString =  GetStatusString();
+		TVPLOG_INFO("VideoOverlay status changed async: {}", statusString);
 
 		if(Owner)
 		{

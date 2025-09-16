@@ -47,7 +47,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 #include "xmmlib.h"
 #if defined(_M_IX86)||defined(_M_X64)
 

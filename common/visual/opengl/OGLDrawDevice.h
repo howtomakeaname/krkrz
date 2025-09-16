@@ -6,6 +6,7 @@
 #include "TextureUpdateRect.h"
 #include "GLTexture.h"
 #include <functional>
+#include <mutex>
 
 //---------------------------------------------------------------------------
 //! @brief	OpelGL のテクスチャに描画する想定の DrawDevice
@@ -94,6 +95,30 @@ public:
 		tjs_int x, tjs_int y, const void * bits, const class BitmapInfomation * bitmapinfo,
 		const tTVPRect &cliprect, tTVPLayerType type, tjs_int opacity);
 	virtual void TJS_INTF_METHOD EndBitmapCompletion(iTVPLayerManager * manager);
+
+#ifdef __GENERIC__	
+
+public:
+	virtual void UpdateVideo(int w, int h, std::function<void(char *dest, int pitch)> updator);
+	virtual void ClearVideo();
+	virtual void SetWaitVSync(bool enable);
+
+private:
+	std::mutex videooverlay_mutex_;
+
+	// 動画用テクスチャ
+	GLTexture *_video_texture;
+	GLfloat _video_position[8];
+
+	char *mVideoBuffer;
+	bool mVideoBufferDirty;
+	int mVideoWidth;
+	int mVideoHeight;
+
+	bool ShowVideo();
+	void UpdateVideoPosition(int w, int h);
+
+#endif
 };
 //---------------------------------------------------------------------------
 

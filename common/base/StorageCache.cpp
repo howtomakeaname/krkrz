@@ -14,6 +14,7 @@
 #include "MsgIntf.h"
 #include "EventIntf.h"
 #include "DebugIntf.h"
+#include "LogIntf.h"
 
 #include "StorageCache.h"
 #include "ThreadIntf.h"
@@ -142,24 +143,34 @@ GetStreamBuffer(iTJSBinaryStream *stream)
 }
 
 
+extern iTJSBinaryStream * _InnerTVPCreateStream(const ttstr &name, tjs_uint32 flags);
 
 // キャッシュデータ登録
 static void EntryStorageCache(const ttstr &name) 
 {
+	iTJSBinaryStream *Stream = nullptr;
 	try {
-		tTVPStreamHolder holder(name);
-		StorageCacheEntry entry;
-		entry.buffer = GetStreamBuffer(holder.Get());
-		entry.lastaccess = time(NULL);
-		entry.usecount = 1;
-		{
-			tTJSCriticalSectionHolder Lock(StorageCacheCS);
-			StorageCacheTable[name] = entry;
+		Stream = _InnerTVPCreateStream(name, TJS_BS_READ);
+		if (Stream) {
+			StorageCacheEntry entry;
+			entry.buffer = GetStreamBuffer(Stream);
+			entry.lastaccess = time(NULL);
+			entry.usecount = 1;
+			{
+				tTJSCriticalSectionHolder Lock(StorageCacheCS);
+				StorageCacheTable[name] = entry;
+			}
+			CurrentStorageCacheSize += entry.buffer->size();
+			TVPLOG_DEBUG("StorageCache:entry:{}", name);
+			Stream->Destruct();
+			Stream = NULL;
 		}
-		CurrentStorageCacheSize += entry.buffer->size();
-		TVPAddLog(TJS_W("StorageCache: entry ") + name);
 	} catch(...) {
-		TVPAddImportantLog(TJS_W("StorageCache: entry failed") + name);
+		if (Stream) {
+			Stream->Destruct();
+			Stream = NULL;
+		}
+		TVPLOG_ERROR("StorageCache:entry:failed:{}", name);
 	}
 }
 
@@ -167,7 +178,7 @@ static void EntryStorageCache(const ttstr &name)
 bool TVPCheckStorageCache(const ttstr &name, bool update) 
 {
 	tTJSCriticalSectionHolder Lock(StorageCacheCS);
-	//TVPAddLog(TJS_W("StorageCache: check ") + name);
+	//TVPLOG_DEBUG("StorageCache: check:{}", name);
 	auto i = StorageCacheTable.find(name);
 	if (i != StorageCacheTable.end()) {
 		if (update) {
@@ -180,28 +191,39 @@ bool TVPCheckStorageCache(const ttstr &name, bool update)
 }
 
 // TVPEntryStorageCacheで登録されたキャッシュデータを取得
-iTJSBinaryStream *TVPGetStorageCache(const ttstr &name) 
+iTJSBinaryStream *TVPGetStorageCache(const ttstr &_name, bool entry) 
 {
+	ttstr name = TVPGetPlacedPath(_name);
+	if(name.IsEmpty()) TVPThrowExceptionMessage(TVPCannotOpenStorage, _name);
+
 	tTJSCriticalSectionHolder Lock(StorageCacheCS);
 	auto i = StorageCacheTable.find(name);
+	if (i == StorageCacheTable.end() && entry) {
+		// キャッシュに無いので登録して取得
+		EntryStorageCache(name);
+		i = StorageCacheTable.find(name);
+	}
 	if (i != StorageCacheTable.end()) {
 		i->second.lastaccess = time(NULL);
 		i->second.usecount--;
-		TVPAddLog(TJS_W("Get StorageCache:") + name);
+		TVPLOG_DEBUG("StorageCache:get:{}", name);
 		return new tTVPSharedMemoryStream(i->second.buffer);
 	}
 	return NULL;
 }
 
 // キャッシュを破棄
-bool TVPClearStorageCache(const ttstr &name) 
+bool TVPClearStorageCache(const ttstr &_name) 
 {
+	ttstr name = TVPGetPlacedPath(_name);
+	if(name.IsEmpty()) TVPThrowExceptionMessage(TVPCannotOpenStorage, _name);
+
 	tTJSCriticalSectionHolder Lock(StorageCacheCS);
 	auto i = StorageCacheTable.find(name);
 	if (i != StorageCacheTable.end()) {
 		CurrentStorageCacheSize -= i->second.buffer->size();
 		StorageCacheTable.erase(i);
-		TVPAddLog(TJS_W("StorageCache: clear ") + name);
+		TVPLOG_DEBUG("StorageCache:clear:{}", name);
 		return true;
 	}
 	return false;
@@ -313,7 +335,7 @@ void tTVPStorageCacheThread::Execute()
 				if (waitTick == 0) {
 					// 空きが無い場合はすこし待つ
 					if (IsOverMaxStorageCacheSize()) {
-						TVPAddLog(TJS_W("StorageCache: over max size, wait ") + ttstr(StorageCacheWaitTime) + TJS_W("sec"));
+						TVPLOG_INFO("StorageCache: over max size, wait {} sec", StorageCacheWaitTime);
 						// 一定以上古い利用済みファイルを破棄
 						TVPClearOldStorageCache(StorageCacheKeepTime * 1000);
 						prevTick = TVPGetTickCount();

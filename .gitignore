@@ -21,10 +21,13 @@
 Debug
 Release
 build/
-plugins
+plugin
+plugin64
 common/msg/text/*.json
 common/msg/text/*.h
 common/msg/text/*.cpp
 common/msg/text/*.rc
 savedata
 data
+krkrz_libplugin
+vcpkg_installed

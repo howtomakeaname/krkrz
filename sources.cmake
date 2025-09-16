@@ -111,7 +111,6 @@ common/utils/md5.c
 common/utils/MiscUtility.cpp
 common/utils/Random.cpp
 common/utils/ThreadIntf.cpp
-common/utils/TickCount.cpp
 common/utils/TimerThread.cpp
 common/utils/TimerIntf.cpp
 common/utils/TVPTimer.cpp
@@ -152,7 +151,7 @@ common/visual/gl/ResampleImage.cpp
 common/visual/gl/WeightFunctor.cpp
 )
 
-if (USEOPENGL)
+if (USE_OPENGL)
 
 set( KRKRZ_SRC_OPENGL
 common/visual/opengl/OGLDrawDevice.cpp
@@ -170,6 +169,7 @@ common/visual/opengl/TextureLayerTreeOwner.cpp
 common/visual/opengl/VertexBinderIntf.cpp
 common/visual/opengl/VertexBufferIntf.cpp 
 common/glad/src/gles2.c
+common/glad/src/egl.c
 )
 
 list(APPEND KRKRZ_DEFINES
@@ -179,7 +179,7 @@ TVP_USE_OPENGL
 set( KRKRZ_SRC_WIN32_OPENGL
 common/glad/src/egl.c
 common/visual/opengl/EGLContext.cpp
-common/visual/win32/OpenGLPlatform.cpp
+win32/visual/OpenGLPlatform.cpp
 )
 
 endif()
@@ -209,10 +209,8 @@ win32/msg/MsgLoad.cpp
 win32/msg/ReadOptionDesc.cpp
 win32/sound/tvpsnd.c
 win32/sound/WaveImpl.cpp
-win32/sound/XAudio2Device.cpp
 win32/utils/ClipboardImpl.cpp
 win32/utils/ThreadImpl.cpp
-win32/utils/TickCountImpl.cpp
 win32/visual/BasicDrawDevice.cpp
 win32/visual/BitmapBitsAlloc.cpp
 win32/visual/BitmapInfomationImpl.cpp
@@ -220,6 +218,7 @@ win32/visual/DInputMgn.cpp
 win32/visual/DrawDeviceImpl.cpp
 win32/visual/GDIFontRasterizer.cpp
 win32/visual/GraphicsLoaderImpl.cpp
+win32/visual/LoadJXR.cpp
 win32/visual/LayerImpl.cpp
 win32/visual/NativeFreeTypeFace.cpp
 win32/visual/TVPScreen.cpp
@@ -230,12 +229,15 @@ win32/visual/WindowImpl.cpp
 win32/environ/Application.cpp
 win32/movie/TVPVideoOverlay.cpp
 
+common/utils/TickCount.cpp
+win32/utils/TickCountImpl.cpp
+
+common/base/FileAllocator.cpp
+common/sound/AudioStream.cpp
+generic/utils/LogImpl.cpp
+
 win32/vcproj/tvpwin32.rc
 win32/vcproj/dpi.manifest
-
-common/visual/LoadJXR.cpp
-common/sound/xmmlib.cpp 
-
 )
 
 set( KRKRZ_SRC_WIN32_SSE
@@ -259,6 +261,7 @@ common/visual/IA32/tvpgl_ia32_intf.c
 common/sound/MathAlgorithms_SSE.cpp
 common/sound/RealFFT_SSE.cpp
 common/sound/WaveFormatConverter_SSE.cpp
+common/sound/xmmlib.cpp 
 )
 
 set( KRKRZ_SRC_WIN32_NAS
@@ -266,7 +269,7 @@ common/visual/IA32/tlg6_chroma.nas
 common/visual/IA32/tlg6_golomb.nas
 )
 
-if (USENEON)
+if (USE_NEON)
 
     list(APPEND KRKRZ_SRC
     common/visual/gl/blend_function_neon.cpp
@@ -309,7 +312,6 @@ generic/environ/JoyPad.cpp
 generic/msg/MsgImpl.cpp
 generic/msg/MsgLoad.cpp
 generic/utils/ClipboardImpl.cpp
-generic/utils/TickCountImpl.cpp
 generic/visual/BitmapBitsAlloc.cpp
 generic/visual/LayerImpl.cpp
 generic/visual/VideoOvlImpl.cpp
@@ -320,7 +322,6 @@ generic/visual/BitmapInfomationImpl.cpp
 set(KRKRZ_PUBLIC_HEADER 
 common/visual/tvpinputdefs.h
 common/visual/MoviePlayer.h
-common/sound/AudioDevice.h
 generic/krkrz.h
 generic/base/LocalFileSystem.h
 generic/environ/WindowFormEvent.h

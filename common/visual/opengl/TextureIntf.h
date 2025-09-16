@@ -12,12 +12,6 @@
 #include "ComplexRect.h"
 #include "LayerBitmapIntf.h"
 
-enum class tTVPTextureColorFormat : tjs_int {
-	RGBA = 0,
-	Alpha = 1,
-	// Luminance or Compressed texture
-};
-
 
 class tTJSNI_Texture : public tTJSNativeInstance, public iTVPTextureInfoIntrface
 {
@@ -32,15 +26,10 @@ class tTJSNI_Texture : public tTJSNativeInstance, public iTVPTextureInfoIntrface
 	tTJSVariant MarginRectObject;
 	class tTJSNI_Rect* MarginRectInstance = nullptr;
 
-	void LoadTexture( const class tTVPBaseBitmap* bitmap, tTVPTextureColorFormat color, bool rbswap = false );
+	void LoadTexture( const class tTVPBaseBitmap* bitmap, tTVPTextureColorFormat color);
 	tjs_error LoadMipmapTexture( const class tTVPBaseBitmap* bitmap, class tTJSArrayNI* sizeList, enum tTVPBBStretchType type, tjs_real typeopt );
-	GLint ColorToGLColor( tTVPTextureColorFormat color );
 
 	void SetMarginRectObject( const tTJSVariant & val );
-
-	static bool _support_inited;
-	static bool _support_bgra;
-	static void InitSupported();
 
 public:
 	tTJSNI_Texture();
@@ -52,6 +41,8 @@ public:
 
 	void CopyBitmap( tjs_int left, tjs_int top, const class tTVPBaseBitmap* bitmap, const tTVPRect& srcRect );
 	void CopyBitmap( const class tTVPBaseBitmap* bitmap );
+
+	void CopyTexture(GLTexture *src);
 
 	GLTexture *GetTexture() { return &Texture; }
 	tjs_uint GetWidth() const override { return SrcWidth; }
@@ -65,7 +56,9 @@ public:
 	tjs_int64 GetVBOHandle() const override;
 	// VBOに描画サイズを設定しておき、テクスチャサイズ以外で描画させる
 	void SetDrawSize( tjs_uint width, tjs_uint height );
-	tjs_int GetImageFormat() const override { return Texture.format(); }
+
+	tTVPTextureColorFormat format() const { return Texture.format(); }
+	virtual GLint glformat() const { return Texture.glformat(); }
 
 	void UpdateTexture(int x, int y, int w, int h, std::function<void(char *dest, int pitch)> updator) {
 		Texture.UpdateTexture(x, y, w, h, updator);
@@ -96,12 +89,6 @@ public:
 
 	// サイズ変更調整
 	bool Resize(tjs_int width, tjs_int height);
-
-	static bool supportBGRA() { 
-		InitSupported();
-		return _support_bgra;
-	}
-
 };
 
 

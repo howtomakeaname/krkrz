@@ -435,6 +435,9 @@ public:
 	void SetEnableTouch( bool b );
 	bool GetEnableTouch() const;
 
+	void SetEnableTouchMouse( bool b );
+	bool GetEnableTouchMouse() const;
+
 	int GetDisplayOrientation();
 	int GetDisplayRotate();
 	

@@ -17,7 +17,8 @@
 
 //---------------------------------------------------------------------------
 tTVPSoundPlayer::tTVPSoundPlayer( tTJSNI_QueueSoundBuffer* owner )
- : Owner( owner ), Stream(nullptr), Paused(false), Playing(false), PlayStopPos(-1) {
+ : Owner( owner ), Stream(nullptr), Paused(false), Playing(false), PlayStopPos(-1), sample_position(0),
+   StreamFrameSize(0), BufferEnded(false){
 }
 //---------------------------------------------------------------------------
 tTVPSoundPlayer::~tTVPSoundPlayer() {
@@ -34,8 +35,9 @@ void tTVPSoundPlayer::PushSamplesBuffer( tTVPSoundSamplesBuffer* buf ) {
 	}
 	if( Stream ) buf->Enqueue( Stream );
 }
+
 //---------------------------------------------------------------------------
-void tTVPSoundPlayer::Callback( class iTVPAudioStream* stream ) {
+void tTVPSoundPlayer::Callback() {
 	tTVPSoundSamplesBuffer* sample = nullptr;
 	{
 		tTJSCriticalSectionHolder holder(Owner->GetBufferCS());
@@ -45,13 +47,11 @@ void tTVPSoundPlayer::Callback( class iTVPAudioStream* stream ) {
 			Samples.erase( itr );
 		}
 	}
-
-	if( sample && stream ) sample->Enqueue2(stream);
-
 	if( sample ) Owner->ReleasePlayedSamples( sample, !BufferEnded );
 }
+
 //---------------------------------------------------------------------------
-void tTVPSoundPlayer::CreateStream( iTVPAudioDevice* device, tTVPWaveFormat& format, tjs_uint samplesCount ) {
+void tTVPSoundPlayer::CreateStream( tTVPWaveFormat& format, tjs_uint samplesCount ) {
 	if( Stream ) delete Stream, Stream = nullptr;
 
 	tTVPAudioStreamParam param;
@@ -68,13 +68,17 @@ void tTVPSoundPlayer::CreateStream( iTVPAudioDevice* device, tTVPWaveFormat& for
 	} else {
 		TVPThrowExceptionMessage(TJS_W("Invalid format(BitsPerSample)."));
 	}
-	param.FramesPerBuffer = samplesCount;		// 1回のキューイングで入れるサンプル数
-	Stream = device->CreateAudioStream( param );
+	param.FramesPerBuffer = samplesCount; // 1回のキューイングで入れるサンプル数
+	Stream = TVPCreateAudioStream( param );
 	if( Stream == nullptr ) {
 		TVPThrowExceptionMessage(TJS_W("Faild to create audio stream."));
 	}
 	StreamFormat = format;
-	Stream->SetCallback( StreamCallback, this );
+	StreamFrameSize = param.BitsPerSample/8 * param.Channels;
+	Stream->SetCallback([](void *userData){
+		tTVPSoundPlayer* player = reinterpret_cast<tTVPSoundPlayer*>(userData);
+		player->Callback();
+	}, this);
 }
 //---------------------------------------------------------------------------
 tjs_int64 tTVPSoundPlayer::GetCurrentPlayingPosition() {

@@ -38,8 +38,9 @@ TJS_EXP_FUNC_DEF(ttstr, TVPGetOSName, ());
 		// retrieve OS name
 		// implement in each platform.
 extern void TVPFireOnApplicationActivateEvent(bool activate_or_deactivate);
+extern void TVPFireOnApplicationTerminating();
 extern tjs_int TVPGetOSBits();
-extern void TVPFireOnJoypadChange(int no, int type);
+extern void TVPFireOnJoypadChange(int no, const tjs_char *name);
 
 //---------------------------------------------------------------------------
 #endif

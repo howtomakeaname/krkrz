@@ -11,6 +11,7 @@
 #include "TVPColor.h"	// clNone
 #include "RectItf.h"
 #include "DebugIntf.h"
+#include "LogIntf.h"
 #include <memory>
 #include <assert.h>
 
@@ -50,7 +51,7 @@ tjs_error TJS_INTF_METHOD tTJSNI_Texture::Construct(tjs_int numparams, tTJSVaria
 		ttstr filename = *param[0];
 		std::unique_ptr<tTVPBaseBitmap> bitmap( new tTVPBaseBitmap( TVPGetInitialBitmap() ) );
 		// tTVPBaseBitmap経由して読み込む。キャッシュ機構などは共有される。
-		tTVPGraphicLoadMode mode = color == tTVPTextureColorFormat::Alpha ? glmGrayscale : (supportBGRA() ? glmNormal : glmNormalRGBA);
+		tTVPGraphicLoadMode mode = color == tTVPTextureColorFormat::Alpha ? glmGrayscale : glmNormal;
 		TVPLoadGraphic( bitmap.get(), filename, clNone, 0, 0, mode, nullptr, nullptr, true );
 		if( is9patch && bitmap->Is32BPP() ) {
 			bitmap->Read9PatchInfo( Scale9Patch, Margin9Patch );
@@ -85,6 +86,14 @@ tjs_error TJS_INTF_METHOD tTJSNI_Texture::Construct(tjs_int numparams, tTJSVaria
 		}
 		LoadTexture( bitmap.get(), color );
 	} else if( param[0]->Type() == tvtObject ) {
+
+		// 第一引数が Texture の場合はコピー実行
+		tTJSNI_Texture* texture = (tTJSNI_Texture*)TJSGetNativeInstance( tTJSNC_Texture::ClassID, param[0] );
+		if (texture) {
+			CopyTexture(texture->GetTexture());
+			return TJS_S_OK;
+		}
+
 		tTJSNI_Bitmap* bmp = nullptr;
 		tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
 		if( clo.Object ) {
@@ -234,7 +243,7 @@ tjs_error TJS_INTF_METHOD tTJSNI_Texture::Construct(tjs_int numparams, tTJSVaria
 			color = (tTVPTextureColorFormat)(tjs_int)*param[2];
 		}
 		// 未初期化データでテクスチャを作る。後でコピーする前提。
-		Texture.create( width, height, nullptr, ColorToGLColor(( tTVPTextureColorFormat)color) );
+		Texture.create( width, height, nullptr, color );
 		// 全体が使用される前提
 		SrcWidth = width;
 		SrcHeight = height;
@@ -269,18 +278,7 @@ void tTJSNI_Texture::SetMarginRectObject( const tTJSVariant & val ) {
 	}
 }
 //----------------------------------------------------------------------
-GLint tTJSNI_Texture::ColorToGLColor( tTVPTextureColorFormat color ) {
-	switch( color ) {
-	case tTVPTextureColorFormat::RGBA:
-		return supportBGRA() ? GL_BGRA_EXT : GL_RGBA;
-	case tTVPTextureColorFormat::Alpha:
-		return GL_ALPHA;
-	default:
-		return supportBGRA() ? GL_BGRA_EXT : GL_RGBA;
-	}
-}
-//----------------------------------------------------------------------
-void tTJSNI_Texture::LoadTexture( const class tTVPBaseBitmap* bitmap, tTVPTextureColorFormat color, bool rbswap ) {
+void tTJSNI_Texture::LoadTexture( const class tTVPBaseBitmap* bitmap, tTVPTextureColorFormat color) {
 	tjs_int bpp = color == tTVPTextureColorFormat::RGBA ? 4 : 1;
 	tjs_int w = bitmap->GetWidth();
 	tjs_int h = bitmap->GetHeight();
@@ -293,30 +291,30 @@ void tTJSNI_Texture::LoadTexture( const class tTVPBaseBitmap* bitmap, tTVPTextur
 		// もしくは赤と青をスワップする必要がある
 		if( bpp == 4 ) {
 			std::unique_ptr<tjs_uint32[]> buffer( new tjs_uint32[w*h] );
-			if( rbswap ) {
-				for( tjs_int y = 0; y < h; y++ ) {
-					tjs_uint32* sl = (tjs_uint32*)bitmap->GetScanLine(y);
-					TVPRedBlueSwapCopy( &buffer[w*y], sl, w );
-				}
-			} else {
+			if( GLTexture::SupportBGRA() ) {
 				for( tjs_int y = 0; y < h; y++ ) {
 					tjs_uint32* sl = (tjs_uint32*)bitmap->GetScanLine(y);
 					memcpy( &buffer[w*y], sl, pitch );
 				}
+			} else {
+				for( tjs_int y = 0; y < h; y++ ) {
+					tjs_uint32* sl = (tjs_uint32*)bitmap->GetScanLine(y);
+					TVPRedBlueSwapCopy( &buffer[w*y], sl, w );
+				}
 			}
-			Texture.create( w, h, buffer.get(), ColorToGLColor( color ) );
+			Texture.create( w, h, buffer.get(), color);
 		} else {
 			std::unique_ptr<tjs_uint8[]> buffer( new tjs_uint8[w*h] );
 			for( tjs_int y = 0; y < h; y++ ) {
 				tjs_uint8* sl = (tjs_uint8*)bitmap->GetScanLine(y);
 				memcpy( &buffer[w*y], sl, pitch );
 			}
-			Texture.create( w, h, buffer.get(), ColorToGLColor( color ) );
+			Texture.create( w, h, buffer.get(), color);
 		}
 	} else {
 		// 上下反転のままコピーする
-		//Texture.create( bitmap->GetWidth(), bitmap->GetHeight(), bitmap->GetScanLine( 0 ), ColorToGLColor( color ) );
-		Texture.create( bitmap->GetWidth(), bitmap->GetHeight(), bitmap->GetScanLine( bitmap->GetHeight() - 1 ), ColorToGLColor( color ) );
+		//Texture.create( bitmap->GetWidth(), bitmap->GetHeight(), bitmap->GetScanLine( 0 ), color);
+		Texture.create( bitmap->GetWidth(), bitmap->GetHeight(), bitmap->GetScanLine( bitmap->GetHeight() - 1 ), color);
 	}
 }
 //----------------------------------------------------------------------
@@ -392,9 +390,20 @@ void  tTJSNI_Texture::CopyBitmap( const class tTVPBaseBitmap* bitmap ) {
 	tTVPRect rect( 0, 0, bitmap->GetWidth(), bitmap->GetHeight() );
 	TVPCopyBitmapToTexture( this, 0, 0, bitmap, rect );
 }
+
+void tTJSNI_Texture::CopyTexture( GLTexture *src ) {
+	if( src == nullptr ) return;
+	if( Texture.id() == src->id() ) return; // 同じなら何もしない
+	Texture.copyFrom( *src );
+	SrcWidth = Texture.width();
+	SrcHeight = Texture.height();
+	// クリップ矩形をリセット
+	SetMarginRectObject( tTJSVariant() );
+}
+
 //----------------------------------------------------------------------
 bool tTJSNI_Texture::IsGray() const {
-	return Texture.format() == GL_ALPHA;
+	return Texture.format() == tTVPTextureColorFormat::Alpha;
 }
 //----------------------------------------------------------------------
 bool tTJSNI_Texture::IsPowerOfTwo() const {
@@ -472,40 +481,6 @@ bool tTJSNI_Texture::Resize(tjs_int width, tjs_int height)
 }
 
 
-
-bool tTJSNI_Texture::_support_inited = false;
-bool tTJSNI_Texture::_support_bgra = false;
-
-void 
-tTJSNI_Texture::InitSupported()
-{
-    if (!_support_inited) {
-
-        bool ext_texture_bgra = false;
-        bool ext_texture_storage = false;
-
-        int NumberOfExtensions;
-        glGetIntegerv(GL_NUM_EXTENSIONS, &NumberOfExtensions);
-        for (int i=0; i<NumberOfExtensions; i++) {
-            const char *name = (const char*)glGetStringi(GL_EXTENSIONS, i);
-            if (strcmp(name, "GL_EXT_texture_format_BGRA8888") == 0 ||
-                strcmp(name, "GL_APPLE_texture_format_BGRA8888") == 0) {
-                ext_texture_bgra = true;
-            } else if (strcmp(name, "GL_EXT_texture_storage") == 0) {
-                ext_texture_storage = true;
-            }
-        }
-        _support_bgra = ext_texture_bgra && ext_texture_storage;
-        _support_inited = true;
-
-		if (_support_bgra) {
-			TVPAddLog(TJS_W("BGRA Texture Supported"));
-		}
-    }
-}
-
-
-
 //---------------------------------------------------------------------------
 // tTJSNC_Texture : TJS Texture class
 //---------------------------------------------------------------------------
@@ -562,6 +537,19 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/copyRect)
 	return TJS_S_OK;
 }
 TJS_END_NATIVE_METHOD_DECL(/*func. name*/copyRect)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/copyTexture)
+{
+	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Texture);
+	if( numparams == 1 ) {
+		tTJSNI_Texture* src = (tTJSNI_Texture*)TJSGetNativeInstance( tTJSNC_Texture::ClassID, param[0] );
+		if( !src ) return TJS_E_INVALIDPARAM;
+		_this->CopyTexture( src->GetTexture());
+		return TJS_S_OK;
+	}
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/*func. name*/copyTexture)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/setDrawSize ) {
 	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Texture );
@@ -845,16 +833,23 @@ bool TVPCopyBitmapToTexture( const iTVPTextureInfoIntrface* texture, tjs_int lef
 	int h = clip.get_height();
 
 	// copy image for each format
-	if( texture->GetImageFormat() == GL_RGBA && bitmap->Is32BPP() ) {
+	if( texture->format() == tTVPTextureColorFormat::RGBA && bitmap->Is32BPP() ) {
 		std::unique_ptr<tjs_uint32[]> buffer(new tjs_uint32[w*h]);
-		for( tjs_int y = 0; y < h; y++) {
-			tjs_uint32* sl = ((tjs_uint32*)bitmap->GetScanLine(top+y)) + clip.left;
-			TVPRedBlueSwapCopy( &buffer[w*y], sl, w);
+		if (GLTexture::SupportBGRA()) {
+			for( tjs_int y = 0; y < h; y++) {
+				tjs_uint32* sl = ((tjs_uint32*)bitmap->GetScanLine(top+y)) + clip.left;
+				memcpy( &buffer[w*y], sl, w);
+			}
+		} else {
+			for( tjs_int y = 0; y < h; y++) {
+				tjs_uint32* sl = ((tjs_uint32*)bitmap->GetScanLine(top+y)) + clip.left;
+				TVPRedBlueSwapCopy( &buffer[w*y], sl, w);
+			}
 		}
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 4 );
 		glBindTexture( GL_TEXTURE_2D, (GLuint)texture->GetNativeHandle() );
-		glTexSubImage2D( GL_TEXTURE_2D, 0, left, top, w, h, texture->GetImageFormat(), GL_UNSIGNED_BYTE, (const void*)buffer.get() );
-	} else if( texture->GetImageFormat() == GL_ALPHA && bitmap->Is8BPP() ) {
+		glTexSubImage2D( GL_TEXTURE_2D, 0, left, top, w, h, texture->glformat(), GL_UNSIGNED_BYTE, (const void*)buffer.get() );
+	} else if( texture->format() == tTVPTextureColorFormat::Alpha && bitmap->Is8BPP() ) {
 		std::unique_ptr<tjs_uint8[]> buffer(new tjs_uint8[w*h]);
 		for( tjs_int y = 0; y < h; y++ ) {
 			tjs_uint8* sl = ((tjs_uint8*)bitmap->GetScanLine(top+y)) + clip.left;
@@ -862,7 +857,7 @@ bool TVPCopyBitmapToTexture( const iTVPTextureInfoIntrface* texture, tjs_int lef
 		}
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 		glBindTexture( GL_TEXTURE_2D, (GLuint)texture->GetNativeHandle() );
-		glTexSubImage2D( GL_TEXTURE_2D, 0, left, top, w, h, texture->GetImageFormat(), GL_UNSIGNED_BYTE, (const void*)buffer.get() );
+		glTexSubImage2D( GL_TEXTURE_2D, 0, left, top, w, h, texture->glformat(), GL_UNSIGNED_BYTE, (const void*)buffer.get() );
 	} else {
 		TVPAddLog(TJS_W("unsupported format"));
 		return false;

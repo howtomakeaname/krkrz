@@ -391,7 +391,7 @@ HRESULT tTVPWindow::CreateWnd( const tjs_string& classname, const tjs_string& ti
 
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC | CS_DBLCLKS, tTVPWindow::WndProc, 0L, 0L,
 						GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
-						window_class_name_.c_str(), NULL };
+						(const wchar_t*)window_class_name_.c_str(), NULL };
 	wc.hIcon = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_TVPWIN32));
 	wc.hIconSm = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_TVPWIN32));
 
@@ -414,7 +414,7 @@ HRESULT tTVPWindow::CreateWnd( const tjs_string& classname, const tjs_string& ti
 		exStyle |= WS_EX_CONTROLPARENT;
 		has_parent_ = true;
 	}
-	window_handle_ = ::CreateWindowEx( exStyle, window_class_name_.c_str(), window_title_.c_str(),
+	window_handle_ = ::CreateWindowEx( exStyle, (const wchar_t*)window_class_name_.c_str(), (const wchar_t*)window_title_.c_str(),
 						WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, winRc.right-winRc.left, winRc.bottom-winRc.top,
 						hParent, NULL, wc.hInstance, NULL );
 	
@@ -459,14 +459,14 @@ HRESULT tTVPWindow::CreateWnd( const tjs_string& classname, const tjs_string& ti
 	return S_OK;
 }
 void tTVPWindow::UnregisterWindow() {
-	::UnregisterClass( window_class_name_.c_str(), wc_.hInstance );
+	::UnregisterClass( (const wchar_t*)window_class_name_.c_str(), wc_.hInstance );
 }
 
 void tTVPWindow::SetWidnowTitle( const tjs_string& title ) {
 	if( window_title_ != title ) {
 		window_title_ = title;
 		if( window_handle_ ) {
-			::SetWindowText( window_handle_, window_title_.c_str() );
+			::SetWindowText( window_handle_, (const wchar_t*)window_title_.c_str() );
 		}
 	}
 }
@@ -542,7 +542,7 @@ void tTVPWindow::GetCaption( tjs_string& v ) const {
 	int len = ::GetWindowTextLength( GetHandle() );
 	if( len > 0 ) {
 		std::vector<tjs_char> caption(len+1,0);
-		int readlen = ::GetWindowText( GetHandle(), &(caption[0]), len+1 );
+		int readlen = ::GetWindowText( GetHandle(), (wchar_t*)&(caption[0]), len+1 );
 		if( readlen > 0 ) {
 			v.assign( &(caption[0]) );
 		}
@@ -551,7 +551,7 @@ void tTVPWindow::GetCaption( tjs_string& v ) const {
 void tTVPWindow::SetCaption( const tjs_string& v ) {
 	if( window_title_ != v ) {
 		window_title_ = v;
-		::SetWindowText( GetHandle(), window_title_.c_str() );
+		::SetWindowText( GetHandle(), (const wchar_t*)window_title_.c_str() );
 	}
 }
 

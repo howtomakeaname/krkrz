@@ -88,11 +88,56 @@ void TVPFireOnApplicationActivateEvent(bool activate_or_deactivate)
 	if(func.Object != NULL) func.FuncCall(0, NULL, NULL, NULL, 0, NULL, NULL);
 }
 //---------------------------------------------------------------------------
+void TVPFireOnApplicationTerminating()
+{
+	// get the script engine
+	tTJS *engine = TVPGetScriptEngine();
+	if(!engine)
+		return; // the script engine had been shutdown
+
+	// get System.onActivate or System.onDeactivate
+	// and call it.
+	iTJSDispatch2 * global = TVPGetScriptEngine()->GetGlobalNoAddRef();
+	if(!global) return;
+
+	tTJSVariant val;
+	tTJSVariant val2;
+	tTJSVariantClosure clo;
+	tTJSVariantClosure func;
+
+	try
+	{
+		tjs_error er;
+		er = global->PropGet(TJS_MEMBERMUSTEXIST, TJS_W("System"), NULL, &val, global);
+		if(TJS_FAILED(er)) return;
+
+		if(val.Type() != tvtObject) return;
+
+		clo = val.AsObjectClosureNoAddRef();
+
+		if(clo.Object == NULL) return;
+
+		clo.PropGet(TJS_MEMBERMUSTEXIST, TJS_W("onTerminating"), NULL, &val2, NULL);
+
+		if(val2.Type() != tvtObject) return;
+
+		func = val2.AsObjectClosureNoAddRef();
+	}
+	catch(const eTJS &e)
+	{
+		// the system should not throw exceptions during retrieving the function
+		TVPAddLog( TVPFormatMessage( TVPErrorInRetrievingSystemOnActivateOnDeactivate, e.GetMessage() ) );
+		return;
+	}
+
+	if(func.Object != NULL) func.FuncCall(0, NULL, NULL, NULL, 0, NULL, NULL);
+}
+
 
 //---------------------------------------------------------------------------
 // TVPFireOnApplicationActivateEvent
 //---------------------------------------------------------------------------
-void TVPFireOnJoypadChange(int no, int type)
+void TVPFireOnJoypadChange(int no, const tjs_char *name)
 {
 	// get the script engine
 	tTJS *engine = TVPGetScriptEngine();
@@ -140,7 +185,7 @@ void TVPFireOnJoypadChange(int no, int type)
 		tjs_int paramCount = 2;
 		tTJSVariant* paramList[2];
 		tTJSVariant param1 = (tjs_int)no;
-		tTJSVariant param2 = (tjs_int)type;
+		tTJSVariant param2 = name;
 		paramList[0] = &param1;
 		paramList[1] = &param2;
 		func.FuncCall(0, NULL, NULL, NULL, paramCount, paramList, NULL);

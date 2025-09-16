@@ -31,7 +31,7 @@ void TVPInitCompatibleNativeFunctions()
 	const tjs_int n = sizeof(TVPCompatibleNativeFuncs)/sizeof(tTVPCompatibleNativeFunc);
 	for( tjs_int i = 0; i<n; i++ ) 	{
 		tTVPCompatibleNativeFunc * p = TVPCompatibleNativeFuncs + i;
-		HMODULE module = GetModuleHandle(p->Module);
+		HMODULE module = GetModuleHandle((const wchar_t*)p->Module);
 		if(module) *(p->Ptr) = (void*)GetProcAddress(module, p->Name);
 	}
 }

@@ -1807,7 +1807,6 @@ iTJSDispatch2 * TVPCreateWaveFlagsObject(iTJSDispatch2 * buffer)
 extern tTJSNativeClass * TVPCreateNativeClass_QueueSoundBuffer();
 #ifdef __WIN32__
 extern tTJSNativeClass * TVPCreateNativeClass_WaveSoundBuffer();
-extern bool TVPHasXAudio2DLL();
 extern void TVPSoundSetGlobalVolume(tjs_int v);
 extern tjs_int TVPSoundGetGlobalVolume();
 extern void TVPSoundSetGlobalFocusMode(tTVPSoundGlobalFocusMode b);
@@ -1816,7 +1815,9 @@ extern tTVPSoundGlobalFocusMode TVPSoundGetGlobalFocusMode();
 tTJSNativeClass * TVPCreateNativeClass_SoundBuffer()
 {
 #ifdef __WIN32__
-	if( TVPHasXAudio2DLL() ) {	// TODO オプションでXAudio2かDirectSoundのどちらを使うか選べる方が好ましい、Wasapiに対応できればもっといい。オプション追加した場合、DS用オプションが色々あるのでその辺りも検討必要。
+	if( false ) {	
+		// TODO オプションでどちらを使うか選べるようにする？
+		// オプション追加した場合、DS用オプションが色々あるのでその辺りも検討必要。
 		TVPSetGlobalVolume = TVPQueueSoundSetGlobalVolume;
 		TVPGetGlobalVolume = TVPQueueSoundGetGlobalVolume;
 		TVPSetGlobalFocusMode = TVPQueueSoundSetGlobalFocusMode;

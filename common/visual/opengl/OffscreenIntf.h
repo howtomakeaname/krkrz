@@ -32,7 +32,9 @@ public:
 	tjs_int64 GetNativeHandle() const override { return FrameBuffer.textureId(); }
 	tjs_int64 GetPBOHandle() const override { return FrameBuffer.pbo(); }
 	tjs_int64 GetVBOHandle() const override;
-	tjs_int GetImageFormat() const override { return FrameBuffer.format(); }
+
+	tTVPTextureColorFormat format() const { return FrameBuffer.format(); }
+	virtual GLint glformat() const { return FrameBuffer.glformat(); }
 
 	/**
 	 * 描画対象に設定する

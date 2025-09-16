@@ -30,6 +30,8 @@ enum {
 	AM_SURFACE_CHANGED,
 	AM_SURFACE_CREATED,
 	AM_SURFACE_DESTORYED,
+
+	// レイヤ自体のDrawDeviceへの全再転送
 	AM_SURFACE_PAINT_REQUEST,
 
     // 画面回転
@@ -51,13 +53,16 @@ enum {
 	AM_STARTUP_SCRIPT,
 
 	AM_RESUME,
-	AM_PAUSE
+	AM_PAUSE,
+
+	// 画面更新要求
+	AM_REQUEST_UPDATE
 };
 
 
 class FormEventHandler {
 public:
 	virtual void SendMessage( tjs_int message, tjs_int64 wparam, tjs_int64 lparam ) = 0;
-	virtual void SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_int64 tick ) = 0;
+	virtual void SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_uint64 tick ) = 0;
 	virtual void SendMouseMessage( tjs_int type, int button, int shift, int x, int y) = 0;
 };

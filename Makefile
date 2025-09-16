@@ -8,8 +8,10 @@ else
 FIXPATH = realpath
 endif
 
+# Detect OS and set default PRESET accordingly
 PRESET?=x64-windows
 BUILD_TYPE?=Release
+CMAKEOPT?="-DUSE_SJIS=ON"
 
 ifeq ($(DATAPATH),)
 DATAPATH=data
@@ -31,13 +33,13 @@ prebuild:
 	cmake --preset $(PRESET) ${CMAKEOPT}
 # ビルド実行
 build:
-	cmake --build --preset $(PRESET) --config $(BUILD_TYPE)
-
-install:
-	cmake --install --preset $(PRESET) --config $(BUILD_TYPE) --prefix $(INSTALL_PREFIX)
+	cmake --build $(BUILD_PATH) --config $(BUILD_TYPE)
 
 clean:
-	cmake --build --preset $(PRESET) --config $(BUILD_TYPE) --target clean
+	cmake --build $(BUILD_PATH) --config $(BUILD_TYPE) --target clean
+
+install:
+	cmake --install $(BUILD_PATH) --config $(BUILD_TYPE) --prefix $(INSTALL_PREFIX)
 
 # WIN版用ルール
 ifeq (windows,$(findstring windows,$(PRESET)))

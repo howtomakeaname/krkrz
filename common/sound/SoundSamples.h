@@ -95,9 +95,6 @@ public:
 	void Enqueue( iTVPAudioStream* stream ) {
 		stream->Enqueue( Buffer, ByteSize, InSamples != SampleSize );
 	}
-	void Enqueue2( iTVPAudioStream* stream ) {
-		stream->Enqueue2( Buffer, ByteSize, InSamples != SampleSize );
-	}
 
 	void SetDecodePosition( tjs_int64 pos ) { DecodePos = pos; }
 	tjs_int64 GetDecodePosition() const { return DecodePos; }

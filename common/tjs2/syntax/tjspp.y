@@ -10,8 +10,6 @@
 /* tjspp.y */
 /* TJS2 conditional compiling control's conditional expression parser */
 
-#include <malloc.h>
-
 #include "tjs.h"
 #include "tjsCompileControl.h"
 

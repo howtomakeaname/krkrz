@@ -94,7 +94,7 @@ void GDIFontRasterizer::ApplyFont( const tTVPFont& font ) {
 	LogFont.lfQuality = DEFAULT_QUALITY;
 	LogFont.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
 	tjs_string face = TVPFontSystem->GetBeingFont(font.Face.AsStdString());
-	TJS_strncpy(LogFont.lfFaceName, face.c_str(), LF_FACESIZE -1);
+	TJS_strncpy((tjs_char*)LogFont.lfFaceName, face.c_str(), LF_FACESIZE -1);
 	LogFont.lfFaceName[LF_FACESIZE-1] = 0;
 
 	FontDC->ApplyFont( &LogFont );
@@ -109,7 +109,7 @@ void GDIFontRasterizer::GetTextExtent(tjs_char ch, tjs_int &w, tjs_int &h) {
 	SIZE s;
 	s.cx = 0;
 	s.cy = 0;
-	::GetTextExtentPoint32(NonBoldFontDC->GetDC(), &ch, 1, &s);
+	::GetTextExtentPoint32(NonBoldFontDC->GetDC(), (wchar_t*)&ch, 1, &s);
 
 	w = s.cx;
 	h = s.cy;
@@ -185,7 +185,7 @@ tTVPCharacterData* GDIFontRasterizer::GetBitmap( const tTVPFontAndCharacterData 
 		SIZE s;
 		s.cx = 0;
 		s.cy = 0;
-		GetTextExtentPoint32( NonBoldFontDC->GetDC(), &font.Character, 1, &s);
+		GetTextExtentPoint32( NonBoldFontDC->GetDC(), (wchar_t*)&font.Character, 1, &s);
 
 		if(font.Font.Flags & TVP_TF_BOLD)
 		{
@@ -353,7 +353,7 @@ void GDIFontRasterizer::GetGlyphDrawRect( const ttstr & text, tTVPRect& area )
 		int err = ::GetGlyphOutline( FontDC->GetDC(), code, GGO_METRICS, &gm, 0, NULL, &no_transform_matrix );
 		SIZE s = {0,0};
 		if( err != GDI_ERROR ) {
-			::GetTextExtentPoint32( NonBoldFontDC->GetDC(), &code, 1, &s );
+			::GetTextExtentPoint32( NonBoldFontDC->GetDC(), (wchar_t*)&code, 1, &s );
 			tjs_int w = gm.gmBlackBoxX;
 			tjs_int h = gm.gmBlackBoxY;
 			tjs_int l = gm.gmptGlyphOrigin.x;

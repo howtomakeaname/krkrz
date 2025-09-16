@@ -8,7 +8,6 @@
 #else
 #include <stdlib.h>
 #endif
-#include <malloc.h>		// _aligned_malloc and _aligned_free
 #include <memory>		// std::allocator
 
 

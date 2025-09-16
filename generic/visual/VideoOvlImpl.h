@@ -13,8 +13,9 @@
 #include "WindowIntf.h"
 #include "VideoOvlIntf.h"
 #include "voMode.h"
+#include "tjsUtils.h"
 
-#include "AudioDevice.h"
+#include "AudioStream.h"
 #include "MoviePlayer.h"
 
 //---------------------------------------------------------------------------
@@ -26,14 +27,17 @@ class tTJSNI_VideoOverlay : public tTJSNI_BaseVideoOverlay
 	typedef tTJSNI_BaseVideoOverlay inherited;
 
 	class iTVPMoviePlayer* mPlayer;
-	class iTVPAudioStream *mAudioStream;
 
 	bool Visible;
 
 	class tTJSNI_BaseLayer	*Layer1;
 	class tTJSNI_BaseLayer	*Layer2;
 	tTVPVideoOverlayMode	Mode;	//!< Modeの動的な変更は出来ない。open前にセットしておくこと
-	class tTVPBaseBitmap	*Bitmap;	//!< Layer描画用バッファ用Bitmap
+	class tTVPBaseBitmap	*Bitmap[2];	//!< Layer描画用バッファ用Bitmap
+
+	int currentSurface;
+	tTJSCriticalSection surfaceLock;
+	bool updateSurface;
 
 public:
 	tTJSNI_VideoOverlay();
@@ -42,8 +46,11 @@ public:
 	tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
 	void TJS_INTF_METHOD Invalidate();
 
-	// 停止したら trueを返す
-	bool Update();
+	void CheckUpdate();
+
+	// 動画更新通知
+	void Update();
+
 	bool IsMixerPlaying() const;
 
 public:

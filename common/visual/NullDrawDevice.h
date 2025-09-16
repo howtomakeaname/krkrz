@@ -66,6 +66,13 @@ public:
 	bool TJS_INTF_METHOD SwitchToFullScreen( HWND window, tjs_uint w, tjs_uint h, tjs_uint bpp, tjs_uint color, bool changeresolution ) override { return true; }
 	void TJS_INTF_METHOD RevertFromFullScreen( HWND window, tjs_uint w, tjs_uint h, tjs_uint bpp, tjs_uint color ) override {}
 	bool TJS_INTF_METHOD WaitForVBlank( tjs_int* in_vblank, tjs_int* delayed ) override { return false; }
+
+#ifdef __GENERIC__	
+	virtual void TJS_INTF_METHOD UpdateVideo(int w, int h, std::function<void(char *dest, int pitch)> updator){};
+	virtual void TJS_INTF_METHOD ClearVideo(){}
+	virtual void TJS_INTF_METHOD SetWaitVSync(bool enable) {}
+#endif
+
 };
 
 //---------------------------------------------------------------------------

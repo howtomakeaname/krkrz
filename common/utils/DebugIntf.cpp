@@ -9,11 +9,13 @@
 // Utilities for Debugging
 //---------------------------------------------------------------------------
 #include "tjsCommHead.h"
+#include "CharacterSet.h"
 
 #include <deque>
 #include <algorithm>
 #include <time.h>
 #include "DebugIntf.h"
+#include "LogIntf.h"
 #include "MsgIntf.h"
 #include "StorageIntf.h"
 #include "SysInitIntf.h"
@@ -422,26 +424,52 @@ void TVPAddLog(const ttstr &line, bool appendtoimportant)
 		TVPLogDeque->erase(i, i+100);
 	}
 
-	tjs_int timebuflen = (tjs_int)TJS_strlen(timebuf);
-	ttstr buf((tTJSStringBufferLength)(timebuflen + 1 + line.GetLen()));
-	tjs_char * p = buf.Independ();
-	TJS_strcpy(p, timebuf);
-	p += timebuflen;
-	*p = TJS_W(' ');
-	p++;
-	TJS_strcpy(p, line.c_str());
-	if(TVPOnLog) TVPOnLog(buf);
 #ifdef ENABLE_DEBUGGER
-	if( TJSEnableDebugMode ) TJSDebuggerLog(buf,appendtoimportant);
-	//OutputDebugStringW( buf.c_str() );
-	//OutputDebugStringW( TJS_W("\n") );
+	if (TVPOnLog || TVPLoggingToFile || TJSEnableDebugMode)
+#else
+	if (TVPOnLog || TVPLoggingToFile)
+#endif
+	{
+		tjs_int timebuflen = (tjs_int)TJS_strlen(timebuf);
+		ttstr buf((tTJSStringBufferLength)(timebuflen + 1 + line.GetLen()));
+		tjs_char * p = buf.Independ();
+		TJS_strcpy(p, timebuf);
+		p += timebuflen;
+		*p = TJS_W(' ');
+		p++;
+		TJS_strcpy(p, line.c_str());
+
+		if(TVPOnLog) TVPOnLog(buf);
+
+		if (TVPLoggingToFile) TVPLogStreamHolder.Log(buf);
+
+#ifdef ENABLE_DEBUGGER
+		if( TJSEnableDebugMode ) TJSDebuggerLog(buf,appendtoimportant);
+		//OutputDebugStringW( buf.c_str() );
+		//OutputDebugStringW( TJS_W("\n") );
 #endif	// ENABLE_DEBUGGER
+	}
 
 #ifdef TVP_LOG_TO_COMMANDLINE_CONSOLE
-	Application->PrintConsole( buf.c_str(), buf.length(), appendtoimportant );
+	{
+		// その他のハンドル, UTF-8で出力
+		static std::vector<char> console_cache_(200);
+		int len = line.length();
+		tjs_int u8len = TVPWideCharToUtf8String(line.c_str(), len, nullptr ) + 1;
+		if (console_cache_.size() < u8len ) {
+			console_cache_.resize(u8len);
+		}
+		char *buf = &console_cache_[0];
+		u8len = TVPWideCharToUtf8String(line.c_str(), len, buf );
+		buf[u8len] = 0; // null-terminate
+		if (appendtoimportant) {
+			TVPLogMsg(TVPLOG_LEVEL_WARNING, buf);
+		} else {
+			TVPLogMsg(TVPLOG_LEVEL_INFO, buf);
+		}
+	}
 #endif
 
-	if(TVPLoggingToFile) TVPLogStreamHolder.Log(buf);
 }
 //---------------------------------------------------------------------------
 void TVPAddLog(const ttstr &line)

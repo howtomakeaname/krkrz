@@ -452,10 +452,6 @@ done:
 //---------------------------------------------------------------------------
 tjs_real TJS_strtod(const tjs_char *nptr, tjs_char **endptr)
 {
-//#ifdef _WIN32
-#if 0
-	return static_cast<tjs_real>(wcstod( reinterpret_cast<const wchar_t*>(nptr), reinterpret_cast<wchar_t**>(endptr) ));
-#else
 	const tjs_char *src;
 	tjs_size size;
 	const tjs_char *start;
@@ -548,7 +544,6 @@ fail:
 		*endptr = (tjs_char *) nptr;
 
 	return 0;
-#endif
 }
 //---------------------------------------------------------------------------
 

@@ -19,6 +19,7 @@ extern TShiftState TVP_TShiftState_From_uint32(tjs_uint32 state);
  * Form = Application->CreateWindowForm(this) として実体化される。
  * このファイル自体は使われず、各環境で各メソッドを実装するためのベースとして使用する
  */
+
 class TTVPWindowForm : public FormEventHandler, TouchHandler {
 
 protected:
@@ -35,13 +36,11 @@ protected:
 	tTVPMouseCursorState mcs_;
 
 public:
-	virtual void SetWaitVSync(bool waitVSync) = 0;
-	virtual void *NativeWindowHandle() = 0;
-	virtual void InitNativeWindow() = 0; // 初期化用処理
-	virtual void DoneNativeWindow() = 0; //  NativeWindowのリセット処理
+	virtual void *NativeWindowHandle() const = 0;
 	virtual void DestroyNativeWindow() = 0; // Window破棄要求　
-
+	virtual void GetSurfaceSize(int &w, int &h) const = 0; // サーフェースのサイズを取得
 	virtual void ResizeWindow(int w, int h);
+	void UpdateVideoOverlay();
 
 private:
 	static int MulDiv( int nNumber, int nNumerator, int nDenominator ) {
@@ -72,9 +71,6 @@ public:
 	void TranslateWindowToDrawArea(int &x, int &y);
 	void TranslateWindowToDrawArea(float &x, float &y);
 	void TranslateDrawAreaToWindow(int &x, int &y);
-
-	// 描画処理
-	virtual bool UpdateContent() { return false; }
 
 	// Windowが有効かどうか、無効だとイベントが配信されない
 	bool GetFormEnabled() { return true; }
@@ -135,12 +131,6 @@ public:
 	void SetImeMode(tTVPImeMode mode) {}
 	tTVPImeMode GetDefaultImeMode() const { return imDisable; }
 	void ResetImeMode() {}
-
-	// VideoOverlay 制御用
-	virtual void UpdateVideo(int w, int h, std::function<void(char *dest, int pitch)> updator) {};
-	virtual void AddVideoOverlay( tTJSNI_VideoOverlay *overlay ) {};
-	virtual void DelVideoOverlay( tTJSNI_VideoOverlay *overlay ) {};
-	virtual void UpdateVideoOverlay() {};
 
 	// 表示/非表示
 	virtual bool GetVisible() const { return true; };
@@ -238,8 +228,10 @@ public:
 	}
 
 	// タッチ入力のマウスエミュレートON/OFF
-	void SetEnableTouch( bool b ) {}
-	bool GetEnableTouch() const { return false; }
+	virtual void SetEnableTouch( bool b ) {}
+	virtual bool GetEnableTouch() const { return false; }
+	virtual void SetEnableTouchMouse( bool b ) {}
+	virtual bool GetEnableTouchMouse() const { return false; }
 
 	// タッチ、マウス加速度
 	bool GetTouchVelocity( tjs_int id, float& x, float& y, float& speed ) const {
@@ -268,17 +260,16 @@ public:
 	virtual int GetDisplayOrientation() { return orientUnknown; }
 	virtual int GetDisplayRotate() { return false; }
 
-	void OnTouchDown( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick );
-	void OnTouchMove( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick );
-	void OnTouchUp( float x, float y, float cx, float cy, tjs_int id, tjs_int64 tick );
+	void OnTouchDown( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick );
+	void OnTouchMove( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick );
+	void OnTouchUp( float x, float y, float cx, float cy, tjs_int id, tjs_uint64 tick );
 	void OnTouchScaling( double startdist, double currentdist, double cx, double cy, int flag );
 	void OnTouchRotate( double startangle, double currentangle, double distance, double cx, double cy, int flag );
 	void OnMultiTouch();
 
 	void OnResume();
 	void OnPause();
-
-	virtual void OnResize(); // リサイズ後のコールバック
+	void OnResize();
 
 	void OnDisplayRotate( tjs_int orientation, tjs_int density );
 
@@ -289,7 +280,7 @@ public:
 	// --------------------------------------------------------
 	// FormEventHandler
 	virtual void SendMessage( tjs_int message, tjs_int64 wparam, tjs_int64 lparam );
-	virtual void SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_int64 tick );
+	virtual void SendTouchMessage( tjs_int type, float x, float y, float c, int id, tjs_uint64 tick );
 	virtual void SendMouseMessage( tjs_int type, int button, int shift, int x, int y);
 };
 

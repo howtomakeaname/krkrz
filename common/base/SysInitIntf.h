@@ -20,6 +20,8 @@
 extern ttstr TVPProjectDir; // project directory
 extern ttstr TVPDataPath; // data directory
 
+// for AtStart
+extern void TVPStartup();
 
 //-- implementation in this unit
 extern void TVPSystemInit(void);
@@ -48,7 +50,19 @@ extern bool TVPSystemUninitCalled;
 
 //---------------------------------------------------------------------------
 
-
+//---------------------------------------------------------------------------
+// AtStart related
+//---------------------------------------------------------------------------
+void TVPAddAtStartHandler(tjs_int pri, void (*handler)());
+struct tTVPAtStart
+{
+	tTVPAtStart(tjs_int pri, void (*handler)())
+	{
+		TVPAddAtStartHandler(pri, handler);
+	}
+};
+#define TVP_ATSTART_PRI_PREPARE    10
+#define TVP_ATSTART_PRI_SETUP      100
 
 //---------------------------------------------------------------------------
 // AtExit related

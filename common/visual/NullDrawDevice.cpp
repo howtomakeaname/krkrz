@@ -24,6 +24,16 @@ TJS_BEGIN_NATIVE_CONSTRUCTOR_DECL(/*var.name*/_this, /*var.type*/tTJSNI_NullDraw
 }
 TJS_END_NATIVE_CONSTRUCTOR_DECL(/*TJS class name*/NullDrawDevice)
 //----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/recreate)
+{
+	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_NullDrawDevice);
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/*func. name*/recreate)
+//----------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------
 //----------------------------------------------------------------------
 // properties
 //----------------------------------------------------------------------
@@ -66,6 +76,10 @@ tTJSNI_NullDrawDevice::~tTJSNI_NullDrawDevice()
 //---------------------------------------------------------------------------
 tjs_error TJS_INTF_METHOD tTJSNI_NullDrawDevice::Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj)
 {
+	// [XXX] support `instanceof "BasicDrawDevice"` for compatibility
+	tTJSVariant name(TJS_W("BasicDrawDevice"));
+	tjs_obj->ClassInstanceInfo(TJS_CII_ADD, 0, &name); // add class name
+
 	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------

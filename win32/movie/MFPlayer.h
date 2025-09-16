@@ -9,7 +9,7 @@
 class tTVPPlayerCallback : public IMFAsyncCallback, public CUnknown {
 	class tTVPMFPlayer* owner_;
 public:
-	tTVPPlayerCallback( class tTVPMFPlayer* owner ) : CUnknown(TJS_W("PlayerCallback"),NULL), owner_(owner) {}
+	tTVPPlayerCallback( class tTVPMFPlayer* owner ) : CUnknown(L"PlayerCallback",NULL), owner_(owner) {}
 
 	// IUnknown
 	DECLARE_IUNKNOWN;

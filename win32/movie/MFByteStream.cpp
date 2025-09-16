@@ -32,7 +32,7 @@ https://www.timbreofprogram.info/blog/archives/460
 //#define MF_D_LOG
 
 tTVPMFByteStream::tTVPMFByteStream( HRESULT *lphr, IStream* lpIStream, const tjs_char *lpFileName, tjs_uint64 size )
- : CUnknown( TJS_W( "tTVPMFByteStream" ), nullptr ), FileName(lpFileName), FileStream(lpIStream), StreamSize(size),
+ : CUnknown( L"tTVPMFByteStream", nullptr ), FileName(lpFileName), FileStream(lpIStream), StreamSize(size),
 	WorkQueueId(0), WorkQueueCB(this,&tTVPMFByteStream::OnDispatchRead)
 {
 	HRESULT hr;

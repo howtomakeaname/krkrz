@@ -9,7 +9,7 @@
 
 class NativeEvent {
 public:
-	int Result;
+	tjs_uint64 Result;
 	tjs_uint Message;
 	tjs_uint WParam;
 	tjs_uint64 LParam;

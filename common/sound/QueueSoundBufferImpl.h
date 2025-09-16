@@ -14,7 +14,7 @@
 
 #include "WaveIntf.h"
 #include "WaveLoopManager.h"
-#include "AudioDevice.h"
+#include "AudioStream.h"
 #include "SoundPlayer.h"
 
 //---------------------------------------------------------------------------

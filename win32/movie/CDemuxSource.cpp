@@ -82,7 +82,7 @@ HRESULT CDemuxSource::OpenStream( IStream *stream )
 	{
 		IOutputStream	*outStream = Reader()->GetOutputStream(i);
 		assert( outStream );
-		CDemuxOutputPin *pin = new CDemuxOutputPin( NAME("Demux Source"), this, &hr, TJS_W("Demux output pin"), this, outStream, &m_crtFilterLock );
+		CDemuxOutputPin *pin = new CDemuxOutputPin( (TCHAR*)NAME("Demux Source"), this, &hr, (TCHAR*)TJS_W("Demux output pin"), this, outStream, &m_crtFilterLock );
 //		pin->AddRef();
 		// AddPinはnewした段階でコールされるので、明示的に追加する必要はない
 	}

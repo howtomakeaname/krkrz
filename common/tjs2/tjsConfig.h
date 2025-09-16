@@ -13,6 +13,9 @@
 #ifndef tjsConfigH
 #define tjsConfigH
 
+#include "tjsTypes.h"
+#include "stdarg.h"
+
 namespace TJS
 {
 //---------------------------------------------------------------------------
@@ -30,8 +33,6 @@ namespace TJS
 
 // TODO: autoconf integration
 
-#include "tjsTypes.h"
-#include "stdarg.h"
 
 
 // #define TJS_NO_AVOID_ISWDIGIT
@@ -120,18 +121,20 @@ inline bool TJS_iswalpha(tjs_char ch) {
 #endif
 
 
-#if defined(__GNUC__)
-	#define TJS_cdecl
-	#define TJS_timezone timezone
-#elif defined(_WIN32)
+#if defined(_WIN32)
 	#define TJS_cdecl __cdecl
-	#define TJS_timezone _timezone
-#elif defined(NINTENDO)
-	#define TJS_cdecl
-extern "C" long TJS_timezone;
 #else
 	#define TJS_cdecl
+#endif
+
+#if defined(TJS_EXTERN_TIMEZONE)
+	extern "C" long TJS_timezone;
+#else
+#if defined(_WIN32)
+	#define TJS_timezone _timezone
+#else
 	#define TJS_timezone timezone
+#endif
 #endif
 
 #define TJS_narrowtowidelen(X) TJS_mbstowcs(NULL, (X),0) // narrow->wide (if) converted length

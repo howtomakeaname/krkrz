@@ -3,12 +3,13 @@
 
 #include "OpenGLHeader.h"
 #include "ComplexRect.h"
+#include "GLTexture.h"
 
 class GLFrameBufferObject {
 	
 protected:
 	GLuint texture_id_;
-	GLint format_;
+	GLint glformat_;
 	GLuint framebuffer_id_;
 	GLuint renderbuffer_id_;
 	GLuint pbo_;
@@ -21,7 +22,7 @@ public:
 	~GLFrameBufferObject() {
 		destory();
 	}
-	bool create( GLuint w, GLuint h, GLint format );
+	bool create( GLuint w, GLuint h);
 	void destory() {
 		if( texture_id_ != 0 ) {
 			glDeleteTextures( 1, &texture_id_ );
@@ -47,8 +48,11 @@ public:
 	GLuint textureId() const { return texture_id_; }
 	GLuint width() const { return width_; }
 	GLuint height() const { return height_; }
-	GLint format() const { return format_; }
 	GLint pbo() const { return pbo_; }
+
+	tTVPTextureColorFormat format() const { return tTVPTextureColorFormat::RGBA; }
+	GLint glformat() const { return glformat_; }
+
 };
 
 

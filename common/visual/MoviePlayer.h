@@ -1,20 +1,17 @@
 #ifndef _MOVIE_PLAYER_H__
 #define _MOVIE_PLAYER_H__
 
+#include <stdint.h>
+#include <functional>
+
 /**
  * レイヤ上で動画再生するための汎用インターフェース
 */
 class iTVPMoviePlayer {
 
 public:
-
-  struct AudioFormat
-  {
-	tjs_uint32 Channels;		// チャンネル数
-	tjs_uint32 SampleRate;		// サンプリングレート
-	tjs_uint32 BitsPerSample;	// サンプル当たりのビット数
-	TVPAudioSampleType SampleType;	// サンプルの形式
-  };
+  
+  virtual ~iTVPMoviePlayer() {}
 
   // --------------------------------------------------------------------
 
@@ -34,18 +31,18 @@ public:
 
   // --------------------------------------------------------------------
 
-  // get RGBA frame
-  virtual bool GetVideoFrame(uint8_t *dst, int32_t w, int32_t h, int32_t strideBytes) = 0;
+  // Video Decoded Frame
+  typedef std::function<void(char *dest, int pitch)> DestUpdater;
+  typedef std::function<void(int w, int h, DestUpdater updater)> OnVideoDecoded;
+  virtual void SetOnVideoDecoded(OnVideoDecoded callback) = 0;
 
   // audio info
-  virtual bool IsAudioAvailable() const                  = 0;
-  virtual void GetAudioFormat(AudioFormat *format) const = 0;
+  virtual bool IsAudioAvailable() const = 0;
 
-  // オーディオデコーダコールバック
-  typedef void (*OnAudioDecoded)(void *userPtr, const uint8_t *data, size_t sizeBytes);
+  // VolumeControl
+  virtual void SetVolume(float volume) = 0;
+  virtual float Volume() const = 0;
 
-  // 出力オーディオ通知関数を登録
-  virtual void SetOnAudioDecoded(OnAudioDecoded func, void *userPtr) = 0;
 };
 
 extern iTVPMoviePlayer*TVPCreateMoviePlayer(const tjs_char *filename);

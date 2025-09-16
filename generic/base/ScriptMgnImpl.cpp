@@ -6,6 +6,7 @@
 #include "Application.h"
 #include "MsgIntf.h"
 #include "CharacterSet.h"
+#include "StorageIntf.h"
 
 //---------------------------------------------------------------------------
 // Hash Map Object を書き出すためのサブプロセスとして起動しているかどうか
@@ -22,16 +23,16 @@ ttstr TVPGetSystemInitializeScript()
 {
 	// read system init file from resource
 
-	const tjs_char *filename = TJS_W("SysInitScript.tjs");
+	tjs_string path = Application->ResourcePath() + TJS_W("SysInitScript.tjs");
 	tjs_uint64 flen;
-	auto buf = Application->ReadResource(filename, &flen);
+	auto buf = TVPReadStream(path.c_str(), &flen);
 	if( buf.get() == nullptr ) {
-		TVPThrowExceptionMessage(TVPCannotOpenStorage, ttstr(filename));
+		TVPThrowExceptionMessage(TVPCannotOpenStorage, ttstr(path.c_str()));
 	}
 
-	// XXX BOMはいってるとだめっぽい？
 	tjs_string ret((tjs_char*)(buf.get())+1, flen/2-1);
-	//Application->PrintConsole(ret.c_str(), ret.size());
+	//TVPLOG_VEBOSE(ret);
+
 
 	return ttstr(ret.c_str());
 }

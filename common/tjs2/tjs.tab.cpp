@@ -86,9 +86,6 @@ static char MEMORY_EXHAUSTED[] = "memory exhausted";
 /* TJS2 bison input file */
 
 
-#include <malloc.h>
-
-
 #include "tjsInterCodeGen.h"
 #include "tjsScriptBlock.h"
 #include "tjsError.h"
@@ -418,7 +415,7 @@ YYID (yyi)
 #   elif defined _AIX
 #    define YYSTACK_ALLOC __alloca
 #   elif defined _MSC_VER
-#    include <malloc.h> /* INFRINGES ON USER NAME SPACE */
+#    include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #    define alloca _alloca
 #   else
 #    define YYSTACK_ALLOC alloca

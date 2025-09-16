@@ -51,7 +51,7 @@ static void TVPShowSimpleMessageBox(const ttstr & text, const ttstr & caption)
 	if( hWnd == INVALID_HANDLE_VALUE ) {
 		hWnd = NULL;
 	}
-	::MessageBox( hWnd, text.AsStdString().c_str(), caption.AsStdString().c_str(), MB_OK|MB_ICONINFORMATION );
+	::MessageBox( hWnd, (const wchar_t*)text.AsStdString().c_str(), (const wchar_t*)caption.AsStdString().c_str(), MB_OK|MB_ICONINFORMATION );
 }
 //---------------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ ttstr TVPGetOSName()
 	ovi.dwOSVersionInfoSize = sizeof(ovi);
 
 	bool isGetVersion = false;
-	HMODULE hModule = ::LoadLibrary( TJS_W("ntdll.dll") );
+	HMODULE hModule = ::LoadLibrary( L"ntdll.dll" );
 	if( hModule ) {
 		RtlGetVersionFunc func;
 		func = (RtlGetVersionFunc)::GetProcAddress( hModule, "RtlGetVersion" );
@@ -284,9 +284,9 @@ bool TVPShellExecute(const ttstr &target, const ttstr &param)
 	// open or execute target file
 //	ttstr file = TVPGetNativeName(TVPNormalizeStorageName(target));
 	if(::ShellExecute(NULL, NULL,
-		target.c_str(),
-		param.IsEmpty() ? NULL : param.c_str(),
-		TJS_W(""),
+		(const wchar_t*)target.c_str(),
+		param.IsEmpty() ? NULL : (const wchar_t*)param.c_str(),
+		L"",
 		SW_SHOWNORMAL)
 		<=(void *)32)
 	{
@@ -364,7 +364,7 @@ static void TVPReadRegValue(tTJSVariant &result, const ttstr & key)
 
 	// open key
 	HKEY handle;
-	LONG res = RegOpenKeyEx(root, keyname.AsStdString().c_str(), 0, KEY_READ, &handle);
+	LONG res = RegOpenKeyEx(root, (const wchar_t*)keyname.AsStdString().c_str(), 0, KEY_READ, &handle);
 	if(res != ERROR_SUCCESS) { result.Clear(); return; }
 
 	// try query value size and read key
@@ -372,7 +372,7 @@ static void TVPReadRegValue(tTJSVariant &result, const ttstr & key)
 	DWORD type;
 
 	// query size
-	res = RegQueryValueEx(handle, valuename.c_str(), 0, &type, NULL, &size);
+	res = RegQueryValueEx(handle, (const wchar_t*)valuename.c_str(), 0, &type, NULL, &size);
 
 	if(res != ERROR_SUCCESS)
 	{
@@ -410,7 +410,7 @@ static void TVPReadRegValue(tTJSVariant &result, const ttstr & key)
 		try
 		{
 			DWORD size2 = size;
-			res = RegQueryValueEx(handle, valuename.c_str(), 0, NULL, data, &size2);
+			res = RegQueryValueEx(handle, (const wchar_t*)valuename.c_str(), 0, NULL, data, &size2);
 
 			if(res == ERROR_MORE_DATA)
 			{
@@ -475,10 +475,10 @@ static void TVPReadRegValue(tTJSVariant &result, const ttstr & key)
 //---------------------------------------------------------------------------
 static ttstr TVPGetSpecialFolderPath(int csidl)
 {
-	tjs_char path[MAX_PATH+1];
+	wchar_t path[MAX_PATH+1];
 	if(!SHGetSpecialFolderPath(NULL, path, csidl, false))
 		return ttstr();
-	return ttstr(path);
+	return ttstr((tjs_char*)path);
 }
 //---------------------------------------------------------------------------
 
@@ -558,10 +558,15 @@ ttstr TVPGetSavedGamesPath()
 //---------------------------------------------------------------------------
 // TVPCreateAppLock
 //---------------------------------------------------------------------------
+extern int GetSystemSecurityOption(const char *name);
 bool TVPCreateAppLock(const ttstr &lockname)
 {
+	// [CUSTOM-MODIFIED] System.createAppLock(...) always return true security-option
+	static const int nolock = GetSystemSecurityOption("disableapplock");
+	if (nolock > 0) return true;
+
 	// lock application using mutex
-	CreateMutex(NULL, TRUE, lockname.c_str());
+	CreateMutex(NULL, TRUE, (const wchar_t*)lockname.c_str());
 
 	if(GetLastError())
 	{
@@ -855,7 +860,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/system)
 
 	ttstr target = *param[0];
 
-	int ret = _wsystem(target.c_str());
+	int ret = _wsystem((const wchar_t*)target.c_str());
 
 	TVPDeliverCompactEvent(TVP_COMPACT_LEVEL_MAX); // this should clear all caches
 

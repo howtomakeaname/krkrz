@@ -13,26 +13,29 @@
 
 #include <algorithm>
 #include "VideoOvlImpl.h"
-#include "WindowForm.h"
+#include "DrawDevice.h"
 #include "Application.h"
 #include "StorageIntf.h"
 #include "LayerIntf.h"
 #include "LayerBitmapIntf.h"
 #include "MsgImpl.h"
+#include "LogIntf.h"
 
 //---------------------------------------------------------------------------
 // tTJSNI_VideoOverlay
 //---------------------------------------------------------------------------
 tTJSNI_VideoOverlay::tTJSNI_VideoOverlay() 
 : mPlayer(nullptr) 
-, mAudioStream(nullptr)
 , Layer1(nullptr)
 , Layer2(nullptr)
-, Bitmap(nullptr)
+, currentSurface(0)
+, updateSurface(false)
 {
 	Mode = vomOverlay;
 	Visible = false;
 
+	Bitmap[0] = nullptr;
+	Bitmap[1] = nullptr;
 }
 
 tTJSNI_VideoOverlay::~tTJSNI_VideoOverlay()
@@ -59,73 +62,53 @@ bool tTJSNI_VideoOverlay::IsMixerPlaying() const
 	return Mode == vomMixer && mPlayer && mPlayer->IsPlaying(); 
 }
 
-bool
-tTJSNI_VideoOverlay::Update()
+void
+tTJSNI_VideoOverlay::CheckUpdate()
 {
-	if (mPlayer && mPlayer->IsPlaying()) {
-
-		SetStatusAsync( tTVPVideoOverlayStatus::Play );
-
-		if (Mode == vomMixer) {
-			long width = mPlayer->Width();
-			long height = mPlayer->Height();
-
-			Window->GetForm()->UpdateVideo(width,height, [this,width,height](char *destp, int dest_pitch) {
-				this->mPlayer->GetVideoFrame((uint8_t*)destp, width, height, dest_pitch);
-			});
-		}
-
-		if (Mode == vomLayer && Bitmap) {
-
-			// get video image size
-			long width = mPlayer->Width();
-			long height = mPlayer->Height();
-
-			tTJSNI_BaseLayer	*l1 = Layer1;
-			tTJSNI_BaseLayer	*l2 = Layer2;
-
-			// Check layer image size
-			if( l1 != NULL )
-			{
-				if( (long)l1->GetImageWidth() != width || (long)l1->GetImageHeight() != height )
-					l1->SetImageSize( width, height );
-				if( (long)l1->GetWidth() != width || (long)l1->GetHeight() != height )
-					l1->SetSize( width, height );
-			}
-			if( l2 != NULL )
-			{
-				if( (long)l2->GetImageWidth() != width || (long)l2->GetImageHeight() != height )
-					l2->SetImageSize( width, height );
-				if( (long)l2->GetWidth() != width || (long)l2->GetHeight() != height )
-					l2->SetSize( width, height );
-			}
-
-			// bitmap に描画
-			{
-				tTVPBitmap *bitmap = Bitmap->GetBitmap();
-				tjs_uint width  = bitmap->GetWidth();
-				tjs_uint height = bitmap->GetHeight();
-
-				// XXX 上下反転してるので注意
-				tjs_int pitch = bitmap->GetPitch(); 
-				uint8_t *dest = static_cast<uint8_t*>(bitmap->GetScanLine(0));
-
-				mPlayer->GetVideoFrame(dest, width, height, pitch);
-			}
-			// レイヤに割当
-			if( l1 ) l1->AssignMainImage( Bitmap );
-			if( l2 ) l2->AssignMainImage( Bitmap );
-			if( l1 ) l1->Update();
-			if( l2 ) l2->Update();
-			FireFrameUpdateEvent(0);
-		}
-		return true;
-	} else {
-		SetStatusAsync( tTVPVideoOverlayStatus::Stop );
-    }
-	return false;
+	if (Status == tTVPVideoOverlayStatus::Play || Status == tTVPVideoOverlayStatus::Pause) {
+		SetStatusAsync( mPlayer->IsPlaying() ? tTVPVideoOverlayStatus::Play : tTVPVideoOverlayStatus::Stop );
+	}
 }
 
+void
+tTJSNI_VideoOverlay::Update()
+{
+	if (Mode == vomLayer && updateSurface) {
+
+		tTJSCriticalSectionHolder cs(surfaceLock);
+		
+		tTVPBaseBitmap *bmp = Bitmap[1-currentSurface];
+		if (!bmp) return;
+
+		int width = bmp->GetWidth();
+		int height = bmp->GetHeight();
+
+		tTJSNI_BaseLayer	*l1 = Layer1;
+		tTJSNI_BaseLayer	*l2 = Layer2;
+
+		if( l1 != NULL )
+		{
+			if( (long)l1->GetImageWidth() != width || (long)l1->GetImageHeight() != height )
+				l1->SetImageSize( width, height );
+			if( (long)l1->GetWidth() != width || (long)l1->GetHeight() != height )
+				l1->SetSize( width, height );
+			l1->AssignMainImage( bmp );
+			l1->Update();
+		}
+		if( l2 != NULL )
+		{
+			if( (long)l2->GetImageWidth() != width || (long)l2->GetImageHeight() != height )
+				l2->SetImageSize( width, height );
+			if( (long)l2->GetWidth() != width || (long)l2->GetHeight() != height )
+				l2->SetSize( width, height );
+			l2->AssignMainImage( bmp );
+			l2->Update();
+		}
+		updateSurface = false;
+		// XXX フレーム番号がとれるのが理想
+		FireFrameUpdateEvent(0);
+	}
+}
 
 //---------------------------------------------------------------------------
 void tTJSNI_VideoOverlay::Open(const ttstr &name) 
@@ -144,40 +127,30 @@ void tTJSNI_VideoOverlay::Open(const ttstr &name)
 
 	mPlayer = TVPCreateMoviePlayer(path.c_str());
 	if (mPlayer) {
-		if (Mode == vomLayer) {
-			long width = mPlayer->Width();
-			long height = mPlayer->Height();
-			if( Bitmap != NULL ) {
-				delete Bitmap;
+		mPlayer->SetOnVideoDecoded([this](int w, int h, iTVPMoviePlayer::DestUpdater updater) {
+			if (Mode == vomMixer) {
+				// Mixer mode, update the window directly
+				Window->UpdateVideo(w, h, updater);
+			} else if (Mode == vomLayer) {
+				if (!Bitmap[currentSurface]) {
+					Bitmap[currentSurface] = new tTVPBaseBitmap(w, h, 32);
+				} else {
+					if (Bitmap[currentSurface]->GetWidth() != w || Bitmap[currentSurface]->GetHeight() != h)
+						// Just set the size without changing the buffer
+						Bitmap[currentSurface]->SetSize(w, h);
+				}
+				tTVPBitmap *bitmap = Bitmap[currentSurface]->GetBitmap();
+				tjs_int dest_pitch = bitmap->GetPitch(); 
+				char *destp = static_cast<char*>(bitmap->GetScanLine(0));
+				updater(destp, dest_pitch);
+				{
+					tTJSCriticalSectionHolder cs(surfaceLock);
+					updateSurface = true;
+					currentSurface = (currentSurface + 1) % 2; // Toggle between 0 and 1
+				}
 			}
-			// XXほんとはプレイヤー側にダブルバッファ登録するのが妥当かもしれず
-			Bitmap = new tTVPBaseBitmap( width, height, 32 );
-		}
-
-		// オーディオ再生を吉里吉里側で行う
-		if (false && Application->MovieAudioEnable() && mPlayer->IsAudioAvailable()) {
-
-			iTVPMoviePlayer::AudioFormat format;
-			mPlayer->GetAudioFormat(&format);
-
-			tTVPAudioStreamParam param;
-			param.Channels      = format.Channels;		// チャンネル数
-			param.SampleRate    = format.SampleRate;	// サンプリングレート
-			param.BitsPerSample = format.BitsPerSample;	// サンプル当たりのビット数
-			param.SampleType    = format.SampleType;	// サンプルの形式
-			param.FramesPerBuffer = format.SampleRate / 2; // バッファサイズ
-
-			mAudioStream = TVPCreateAudioStream(param);
-
-			if (mAudioStream)  {
-				mPlayer->SetOnAudioDecoded([](void *userPtr, const uint8_t *data, size_t sizeBytes) {
-					if (userPtr) {
-						((iTVPAudioStream*)userPtr)->Enqueue((void*)data, sizeBytes, false);
-					}
-				}, this);	
-			}
-		}
-
+			SetStatusAsync( mPlayer->IsPlaying() ? tTVPVideoOverlayStatus::Play : tTVPVideoOverlayStatus::Stop );
+		});
 	} else {
 		SetStatus( tTVPVideoOverlayStatus::LoadError );
 	}
@@ -186,21 +159,18 @@ void tTJSNI_VideoOverlay::Open(const ttstr &name)
 void tTJSNI_VideoOverlay::Close() 
 {
 	if (mPlayer) {
-		Window->GetForm()->DelVideoOverlay(this);
+		Window->DelVideoOverlay(this);
 		delete mPlayer;
 		mPlayer = nullptr;
 	}
-
-	if (mAudioStream) {
-		delete mAudioStream;
-		mAudioStream = nullptr;
+	if( Bitmap[0] ) {
+		delete Bitmap[0];
+		Bitmap[0] = nullptr;
 	}
-
-	if( Bitmap ) {
-		delete Bitmap;
-		Bitmap = NULL;
+	if( Bitmap[1] ) {
+		delete Bitmap[1];		
+		Bitmap[1] = nullptr;
 	}
-
 	SetStatus(tTVPVideoOverlayStatus::Unload);
 }
 //---------------------------------------------------------------------------
@@ -217,7 +187,7 @@ void tTJSNI_VideoOverlay::Disconnect()
 void tTJSNI_VideoOverlay::Play() {
 	if (mPlayer) {
 		mPlayer->Play();
-		Window->GetForm()->AddVideoOverlay(this);
+		Window->AddVideoOverlay(this);
 	}
 }
 //---------------------------------------------------------------------------
@@ -382,7 +352,7 @@ void tTJSNI_VideoOverlay::SetAudioBalance(tjs_int b) {}
 //---------------------------------------------------------------------------
 tjs_int tTJSNI_VideoOverlay::GetAudioVolume() {
 	if (mPlayer) {
-		float volume = 1.0; // mPlayer->GetMovieVolume();
+		float volume = mPlayer->Volume();
 		return (tjs_int)(volume * 100000);
 	}
 	return 0;
@@ -393,7 +363,7 @@ void tTJSNI_VideoOverlay::SetAudioVolume(tjs_int b) {
 		if( b < 0 ) b = 0;
 		if( b > 100000 ) b = 100000;
 		float volume = (float)b / 100000.0f;
-		//mPlayer->SetMovieVolume ( volume );
+		mPlayer->SetVolume ( volume );
 	}
 }
 //---------------------------------------------------------------------------

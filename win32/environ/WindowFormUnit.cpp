@@ -1599,7 +1599,6 @@ void TTVPWindowForm::SetEnableTouch( bool b ) {
 			}
 		}
 	}
-	ignore_touch_mouse_ = b;
 }
 
 bool TTVPWindowForm::GetEnableTouch() const {
@@ -1609,6 +1608,19 @@ bool TTVPWindowForm::GetEnableTouch() const {
 	}
 	return false;
 }
+
+void TTVPWindowForm::SetEnableTouchMouse( bool b ) 
+{
+	ignore_touch_mouse_ = !b;
+}
+
+bool TTVPWindowForm::GetEnableTouchMouse() const 
+{
+	return !ignore_touch_mouse_;
+}
+
+
+
 void TTVPWindowForm::InvokeShowVisible() {
 	// this posts window message which invokes WMShowVisible
 	::PostMessage( GetHandle(), TVP_WM_SHOWVISIBLE, 0, 0);
@@ -1791,11 +1803,11 @@ void TTVPWindowForm::OnDropFile( HDROP hDrop ) {
 	try {
 		tjs_int count = 0;
 		for( tjs_int i = filecount-1; i>=0; i-- ) {
-			::DragQueryFile( hDrop, i, filename, MAX_PATH );
+			::DragQueryFile( hDrop, i, (wchar_t*)filename, MAX_PATH );
 			WIN32_FIND_DATA fd;
 			HANDLE h;
 			// existence checking
-			if((h = ::FindFirstFile(filename, &fd)) != INVALID_HANDLE_VALUE) {
+			if((h = ::FindFirstFile((const wchar_t*)filename, &fd)) != INVALID_HANDLE_VALUE) {
 				::FindClose(h);
 				tTJSVariant val = TVPNormalizeStorageName(ttstr(filename));
 				// push into array

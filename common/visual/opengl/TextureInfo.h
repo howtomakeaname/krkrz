@@ -2,6 +2,12 @@
 #ifndef TextureInfoH
 #define TextureInfoH
 
+enum class tTVPTextureColorFormat : tjs_int {
+	RGBA = 0,
+	Alpha = 1,
+	// Luminance or Compressed texture
+};
+
 class iTVPTextureInfoIntrface {
 public:
 
@@ -37,10 +43,14 @@ public:
 	virtual tjs_int64 GetVBOHandle() const = 0;
 
 	/**
-	 * テクスチャフォーマットを取得
-	 * @return テクスチャフォーマット
+	 * テクスチャフォーマットを返す
 	 */
-	virtual tjs_int GetImageFormat() const = 0;
+	virtual tTVPTextureColorFormat format() const = 0;
+
+	/**
+	 * OpenGLのテクスチャフォーマットを返す
+	 */
+	virtual GLint glformat() const = 0;
 };
 
 #endif

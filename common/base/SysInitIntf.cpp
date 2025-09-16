@@ -17,6 +17,7 @@
 #include "tjsUtils.h"
 #include "SysInitIntf.h"
 #include "ScriptMgnIntf.h"
+#include "LogIntf.h"
 #include "tvpgl.h"
 
 
@@ -30,6 +31,16 @@ ttstr TVPDataPath; // data directory (in unified storage name)
 
 
 extern void TVPGL_C_Init();
+
+//---------------------------------------------------------------------------
+// TVPStartup for startup functions
+//---------------------------------------------------------------------------
+static void TVPCauseAtStart();
+void TVPStartup()
+{
+	TVPCauseAtStart();
+}
+
 //---------------------------------------------------------------------------
 // TVPSystemInit : Entire System Initialization
 //---------------------------------------------------------------------------
@@ -102,6 +113,32 @@ struct tTVPAtExitInfo
 		{ return this->Priority == r.Priority; }
 
 };
+
+static std::vector<tTVPAtExitInfo> *TVPAtStartInfos = NULL;
+//---------------------------------------------------------------------------
+void TVPAddAtStartHandler(tjs_int pri, void (*handler)())
+{
+	if(!TVPAtStartInfos) TVPAtStartInfos = new std::vector<tTVPAtExitInfo>();
+	TVPAtStartInfos->push_back(tTVPAtExitInfo(pri, handler));
+}
+//---------------------------------------------------------------------------
+static void TVPCauseAtStart()
+{
+	if (TVPAtStartInfos) {
+		std::sort(TVPAtStartInfos->begin(), TVPAtStartInfos->end()); // descending sort
+
+		for(auto i = TVPAtStartInfos->begin(); i!=TVPAtStartInfos->end(); i++)
+		{
+			i->Handler();
+		}
+
+		delete TVPAtStartInfos;
+		TVPAtStartInfos = NULL;
+	}
+}
+//---------------------------------------------------------------------------
+
+
 static std::vector<tTVPAtExitInfo> *TVPAtExitInfos = NULL;
 static bool TVPAtExitShutdown = false;
 //---------------------------------------------------------------------------
@@ -120,13 +157,13 @@ static void TVPCauseAtExit()
 
 	std::sort(TVPAtExitInfos->begin(), TVPAtExitInfos->end()); // descending sort
 
-	std::vector<tTVPAtExitInfo>::iterator i;
-	for(i = TVPAtExitInfos->begin(); i!=TVPAtExitInfos->end(); i++)
+	for(auto i = TVPAtExitInfos->begin(); i!=TVPAtExitInfos->end(); i++)
 	{
 		i->Handler();
 	}
 
 	delete TVPAtExitInfos;
+	TVPAtExitInfos = NULL;
 }
 //---------------------------------------------------------------------------
 

@@ -18,9 +18,13 @@ class tTVPSoundSamplesBuffer;
 class iTVPAudioStream;
 class tTVPSoundPlayer {
 	tTJSNI_QueueSoundBuffer* Owner;
+
 	std::vector<tTVPSoundSamplesBuffer*> Samples;
+	off_t sample_position;
+
 	iTVPAudioStream *Stream;
 	tTVPWaveFormat StreamFormat;	// 現在のStreamのSoundフォーマット。再生成を回避する
+	int StreamFrameSize;
 
 	bool Paused;
 	bool Playing;
@@ -34,12 +38,9 @@ public:
 
 	// サンプルバッファを追加する
 	void PushSamplesBuffer( tTVPSoundSamplesBuffer* buf );
-	static void StreamCallback( class iTVPAudioStream* stream, void* user ) {
-		tTVPSoundPlayer* player = reinterpret_cast<tTVPSoundPlayer*>(user);
-		player->Callback( stream );
-	}
-	void Callback( class iTVPAudioStream* stream );
-	void CreateStream( class iTVPAudioDevice* device, tTVPWaveFormat& format, tjs_uint samplesCount );
+
+	void Callback();
+	void CreateStream( tTVPWaveFormat& format, tjs_uint samplesCount );
 	void Start();
 	void Stop();
 	void Reset();

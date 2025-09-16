@@ -25,7 +25,7 @@ public:
 	bool Open( const tjs_char* filename, const tjs_char* mode ) {
 		Close();
 #ifdef __WIN32__
-		fp_ = _wfopen(filename, mode);
+		fp_ = _wfopen((const wchar_t*)filename, (const wchar_t*)mode);
 		return fp_ != NULL;
 #else
 		fp_ = NULL;

@@ -433,6 +433,9 @@ public:
 	void SetEnableTouch( bool b );
 	bool GetEnableTouch() const;
 
+	void SetEnableTouchMouse( bool b );
+	bool GetEnableTouchMouse() const;
+
 	void UpdateOrientation();
 	bool GetOrientation( int& orientation, int& rotate ) const;
 };

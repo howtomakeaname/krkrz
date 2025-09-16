@@ -88,6 +88,7 @@ bool tTJSNI_Window::CanDeliverEvents() const
 //---------------------------------------------------------------------------
 void tTJSNI_Window::NotifyWindowClose()
 {
+	ClearVideo();
 	Form = NULL;
 }
 //---------------------------------------------------------------------------
@@ -125,15 +126,69 @@ void tTJSNI_Window::UpdateContent()
 			SetDestRectangle(destRect);
 			UpdateDestRect = false;
 		}
-		if (!Form->UpdateContent()) {
-			if ( DrawDevice ) {
-				// is called from event dispatcher
-				DrawDevice->Update();
-				DrawDevice->Show();
-			}
+		if ( DrawDevice ) {
+			// is called from event dispatcher
+			DrawDevice->Update();
+			DrawDevice->Show();
 		}
+		CheckVideoOverlay();
 	}
 	EndUpdate();
+}
+
+//---------------------------------------------------------------------------
+void tTJSNI_Window::UpdateVideo(tjs_int w, tjs_int h, std::function<void(char *dest, int pitch)> updator)
+{
+	if (DrawDevice) {
+		DrawDevice->UpdateVideo(w, h, updator);
+	}
+}
+
+void tTJSNI_Window::ClearVideo()
+{
+	if (DrawDevice) {
+		DrawDevice->ClearVideo();
+	}
+}
+
+void 
+tTJSNI_Window::AddVideoOverlay( tTJSNI_VideoOverlay *overlay ) 
+{
+	VideoOverlays.push_back( overlay );
+	CheckVideoOverlay();
+}
+
+void 
+tTJSNI_Window::DelVideoOverlay( tTJSNI_VideoOverlay *overlay ) 
+{
+	auto i = std::remove( VideoOverlays.begin(), VideoOverlays.end(), overlay );
+	VideoOverlays.erase( i, VideoOverlays.end() );
+	CheckVideoOverlay();
+}
+
+void 
+tTJSNI_Window::CheckVideoOverlay()
+{
+    int mixer_count = 0;
+	for (auto it=VideoOverlays.begin(); it!= VideoOverlays.end(); it++) {
+		(*it)->CheckUpdate();
+		if ((*it)->IsMixerPlaying()) {
+            mixer_count++;
+        }
+	}
+    // mixer 再生中のものが居なくなったら破棄
+    if (mixer_count == 0) {
+        ClearVideo();
+    }
+}
+
+void 
+tTJSNI_Window::UpdateVideoOverlay()
+{
+	for (auto it=VideoOverlays.begin(); it!= VideoOverlays.end(); it++) {
+		(*it)->Update();
+	}
+	CheckVideoOverlay();
 }
 
 //---------------------------------------------------------------------------
@@ -782,6 +837,18 @@ void tTJSNI_Window::SetEnableTouch( bool b )
 	Form->SetEnableTouch(b);
 }
 //---------------------------------------------------------------------------
+void tTJSNI_Window::SetEnableTouchMouse( bool b )
+{
+	if(!Form) return;
+	Form->SetEnableTouchMouse(b);
+}
+//---------------------------------------------------------------------------
+bool tTJSNI_Window::GetEnableTouchMouse() const
+{
+	if(!Form) return 0;
+	return Form->GetEnableTouchMouse();
+}
+//---------------------------------------------------------------------------
 bool tTJSNI_Window::GetEnableTouch() const
 {
 	if(!Form) return 0;
@@ -808,8 +875,8 @@ bool tTJSNI_Window::WaitForVBlank( tjs_int* in_vblank, tjs_int* delayed )
 //---------------------------------------------------------------------------
 void tTJSNI_Window::UpdateWaitVSync()
 {
-	if (Form) {
-		Form->SetWaitVSync(WaitVSync);
+	if (DrawDevice) {
+		DrawDevice->SetWaitVSync(WaitVSync);
 	}
 }
 //---------------------------------------------------------------------------
@@ -1145,6 +1212,26 @@ TJS_BEGIN_NATIVE_PROP_DECL(enableTouch)
 	TJS_END_NATIVE_PROP_SETTER
 }
 TJS_END_NATIVE_PROP_DECL_OUTER(cls, enableTouch)
+//---------------------------------------------------------------------------
+TJS_BEGIN_NATIVE_PROP_DECL(enableTouchMouse)
+{
+	TJS_BEGIN_NATIVE_PROP_GETTER
+	{
+		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Window);
+		*result = _this->GetEnableTouchMouse()?1:0;
+		return TJS_S_OK;
+	}
+	TJS_END_NATIVE_PROP_GETTER
+
+	TJS_BEGIN_NATIVE_PROP_SETTER
+	{
+		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Window);
+		_this->SetEnableTouchMouse( ((tjs_int)*param) ? true : false );
+		return TJS_S_OK;
+	}
+	TJS_END_NATIVE_PROP_SETTER
+}
+TJS_END_NATIVE_PROP_DECL_OUTER(cls, enableTouchMouse)
 //---------------------------------------------------------------------------
 TJS_BEGIN_NATIVE_PROP_DECL(displayOrientation)
 {

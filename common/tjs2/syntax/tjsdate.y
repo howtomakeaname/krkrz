@@ -10,8 +10,6 @@
 /* tjsdate.y */
 /* TJS2 date string parser */
 
-#include <malloc.h>
-
 #include "tjsTypes.h"
 #include "tjsDateParser.h"
 
