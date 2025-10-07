@@ -38,7 +38,7 @@ endif()
 if (WIN32)
 set(CMAKE_RC_FLAGS "")
 # nasm setup
-set( CMAKE_ASM_NASM_FLAGS "-O1 -safeseh -Xvc -fwin32 -DWIN32 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/visual/IA32/" )
+set( CMAKE_ASM_NASM_FLAGS "-O1 -safeseh -Xvc -fwin32 -DWIN32 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/common/visual/IA32/" )
 set( CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS "asm;nasm;nas")
 find_program(CMAKE_ASM_NASM_COMPILER NAMES nasm)
 enable_language(ASM_NASM)
